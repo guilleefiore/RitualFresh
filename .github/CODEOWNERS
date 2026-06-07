@@ -1,0 +1,5 @@
+# Require Guillermina's review for all repository changes.
+* @guilleefiore
+
+# Keep review ownership of this file explicit.
+/.github/CODEOWNERS @guilleefiore
