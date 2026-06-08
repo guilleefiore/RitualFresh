@@ -1,4 +1,4 @@
-# RitualFresh
+# RitualFresh FINAL
 
 RitualFresh es una plataforma web orientada a centralizar la contratación de servicios domésticos de limpieza y mantenimiento del hogar. El sistema busca conectar clientes, trabajadores independientes y empresas prestadoras de servicios mediante un entorno organizado, transparente y confiable.
 
