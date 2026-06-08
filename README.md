@@ -267,7 +267,7 @@ El proyecto se encuentra iniciando la etapa de Desarrollo e Implementación. Ya 
 
 ## Configuración local
 
-El repositorio incluye un archivo `.env.example` como plantilla de variables de entorno. Cada integrante debe crear su propio archivo `.env` local a partir de esa plantilla. El archivo `.env` no debe subirse al repositorio porque puede contener credenciales, rutas locales o datos sensibles.
+Cada integrante debe crear su propio archivo `.env` local con las variables de entorno necesarias para ejecutar el proyecto. El archivo `.env` y sus variantes no deben subirse al repositorio porque pueden contener credenciales, rutas locales o datos sensibles.
 
 ## Versiones
 
@@ -279,3 +279,4 @@ El repositorio incluye un archivo `.env.example` como plantilla de variables de 
 | v0.4 | 2026-06-08 | Incorporación del diagrama de clases y estructura inicial Java orientada a objetos sin Maven. | Equipo RitualFresh |
 | v0.5 | 2026-06-08 | Incorporación de la estructura inicial del frontend React por módulos funcionales. | Equipo RitualFresh |
 | v0.6 | 2026-06-08 | Incorporación de `.gitignore` y plantilla `.env.example` para configuración local. | Equipo RitualFresh |
+| v0.7 | 2026-06-08 | Eliminación de `.env.example` del repositorio y ajuste de exclusión de variables de entorno. | Equipo RitualFresh |
