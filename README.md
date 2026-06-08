@@ -152,6 +152,12 @@ La etapa de diseño define el comportamiento funcional y visual de RitualFresh a
 
 El modelo funcional se organiza por módulos y utiliza historias de usuario con identificadores como `US01-M01-RF01`, lo que permite mantener trazabilidad entre requerimientos, pantallas y funcionalidades.
 
+### Diagrama de clases
+
+El siguiente diagrama resume las clases principales previstas para el modelo orientado a objetos del sistema.
+
+![Diagrama de clases de RitualFresh](assets/diagramas/diagrama-clases.png)
+
 Entre las pantallas principales se incluyen:
 
 - Registro de usuario.
@@ -173,6 +179,54 @@ Entre las pantallas principales se incluyen:
 - Selección de ubicación mediante mapa.
 
 También se contemplan reportes administrativos, como dashboard general, reporte tabular de contrataciones y reporte de reclamos e incidencias.
+
+## Estructura inicial del proyecto
+
+La estructura inicial de código se organiza separando backend y frontend dentro del mismo repositorio. El backend se estructura como un proyecto Java orientado a objetos, sin Maven, agrupando los paquetes según las clases y responsabilidades del diagrama. El frontend se prepara como una aplicación React organizada por pantallas, componentes reutilizables, servicios y módulos funcionales.
+
+```text
+backend/
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   └── ar/edu/utn/frm/ritualfresh/
+    │   │       ├── agenda/
+    │   │       ├── calificaciones/
+    │   │       ├── chat/
+    │   │       ├── compartido/
+    │   │       ├── contrataciones/
+    │   │       ├── notificaciones/
+    │   │       ├── pagos/
+    │   │       ├── servicios/
+    │   │       ├── solicitudes/
+    │   │       ├── ubicaciones/
+    │   │       └── usuarios/
+    │   └── resources/
+    └── test/
+        └── java/
+            └── ar/edu/utn/frm/ritualfresh/
+
+frontend/
+├── public/
+└── src/
+    ├── app/
+    ├── assets/
+    ├── components/
+    ├── features/
+    │   ├── busqueda/
+    │   ├── calificaciones/
+    │   ├── chat/
+    │   ├── contrataciones/
+    │   ├── geolocalizacion/
+    │   ├── historial/
+    │   ├── notificaciones/
+    │   ├── pagos/
+    │   ├── perfiles/
+    │   └── usuarios/
+    ├── pages/
+    ├── services/
+    └── styles/
+```
 
 ## Alcance no incluido en esta etapa
 
@@ -218,3 +272,5 @@ El proyecto se encuentra iniciando la etapa de Desarrollo e Implementación. Ya 
 | v0.1 | 2026-06-07 | Creación del repositorio, configuración inicial de ramas y CODEOWNERS. | Equipo RitualFresh |
 | v0.2 | 2026-06-07 | README consolidado con síntesis de anteproyecto, requerimientos y diseño. | Equipo RitualFresh |
 | v0.3 | 2026-06-07 | README actualizado con tildes, legajos de integrantes y organización por módulos. | Equipo RitualFresh |
+| v0.4 | 2026-06-08 | Incorporación del diagrama de clases y estructura inicial Java orientada a objetos sin Maven. | Equipo RitualFresh |
+| v0.5 | 2026-06-08 | Incorporación de la estructura inicial del frontend React por módulos funcionales. | Equipo RitualFresh |
