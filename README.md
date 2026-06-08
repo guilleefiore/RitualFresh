@@ -265,6 +265,10 @@ El equipo trabajará de forma colaborativa en las distintas etapas del desarroll
 
 El proyecto se encuentra iniciando la etapa de Desarrollo e Implementación. Ya se elaboraron las etapas de Anteproyecto, Requerimientos y Diseño, y se está consolidando el repositorio para comenzar la implementación.
 
+## Configuración local
+
+El repositorio incluye un archivo `.env.example` como plantilla de variables de entorno. Cada integrante debe crear su propio archivo `.env` local a partir de esa plantilla. El archivo `.env` no debe subirse al repositorio porque puede contener credenciales, rutas locales o datos sensibles.
+
 ## Versiones
 
 | Versión | Fecha | Funcionalidades incluidas | Responsable |
@@ -274,3 +278,4 @@ El proyecto se encuentra iniciando la etapa de Desarrollo e Implementación. Ya 
 | v0.3 | 2026-06-07 | README actualizado con tildes, legajos de integrantes y organización por módulos. | Equipo RitualFresh |
 | v0.4 | 2026-06-08 | Incorporación del diagrama de clases y estructura inicial Java orientada a objetos sin Maven. | Equipo RitualFresh |
 | v0.5 | 2026-06-08 | Incorporación de la estructura inicial del frontend React por módulos funcionales. | Equipo RitualFresh |
+| v0.6 | 2026-06-08 | Incorporación de `.gitignore` y plantilla `.env.example` para configuración local. | Equipo RitualFresh |

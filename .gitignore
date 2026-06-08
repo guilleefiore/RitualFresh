@@ -1,0 +1,33 @@
+# Java
+*.class
+out/
+build/
+bin/
+
+# React / Node.js
+node_modules/
+dist/
+.vite/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
