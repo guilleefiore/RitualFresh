@@ -265,7 +265,7 @@ El equipo trabajará de forma colaborativa en las distintas etapas del desarroll
 
 ## Estado actual
 
-El proyecto se encuentra en etapa de Desarrollo e Implementación. Ya se elaboraron las etapas de Anteproyecto, Requerimientos y Diseño, y se completó la base backend de las historias de usuario previstas para los módulos M01 y M02.
+El proyecto se encuentra en etapa de Desarrollo e Implementación. Ya se elaboraron las etapas de Anteproyecto, Requerimientos y Diseño, se completó la base backend de las historias de usuario previstas para los módulos M01 y M02, y se incorporó un frontend React navegable con pantallas representativas de los módulos funcionales.
 
 ## Configuración local
 
@@ -350,3 +350,4 @@ Endpoints iniciales del módulo M02:
 | v1.1 | 2026-06-09 | Migración del módulo M01 a persistencia con JPA/Hibernate, PostgreSQL y BCrypt para contraseñas. | Equipo RitualFresh |
 | v1.2 | 2026-06-09 | Incorporación del backend inicial del módulo M02 para creación, consulta y edición de perfiles de cliente y trabajador. | Equipo RitualFresh |
 | v1.3 | 2026-06-09 | Finalización backend de las historias M01 y M02 con recuperación de contraseña, sesiones autenticadas, perfiles completos y trazabilidad por identificador. | Equipo RitualFresh |
+| v1.4 | 2026-06-09 | Incorporación de un frontend React navegable con estilo Material Design 3, datos simulados y pantallas por módulos funcionales. | Equipo RitualFresh |
