@@ -299,6 +299,16 @@ cd backend
 mvn spring-boot:run
 ```
 
+Para instalar y ejecutar el frontend local:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+El frontend utiliza Vite con proxy local hacia `http://localhost:8080`, por lo que el backend debe estar iniciado para probar los formularios contra la API.
+
 Endpoints iniciales del módulo M01:
 
 | Método | Ruta | Descripción |
@@ -333,6 +343,8 @@ Endpoints iniciales del módulo M02:
 | `US01-M02-RF01` | M02 | Perfil del trabajador autenticado con descripción, años de experiencia, servicios ofrecidos, zona de trabajo, disponibilidad y precio por hora orientativo. |
 | `US02-M02-RF02` | M02 | Perfil del cliente autenticado con teléfono de contacto, dirección y preferencias de contratación. |
 
+Las pantallas iniciales del frontend permiten operar los flujos `M01-WFR-01`, `M01-WFR-02`, `M01-WFR-03`, `M01-WFR-04`, `M02-WFR-01` y `M02-WFR-02` desde una interfaz React.
+
 ## Versiones
 
 | Versión | Fecha | Funcionalidades incluidas | Responsable |
@@ -350,3 +362,4 @@ Endpoints iniciales del módulo M02:
 | v1.1 | 2026-06-09 | Migración del módulo M01 a persistencia con JPA/Hibernate, PostgreSQL y BCrypt para contraseñas. | Equipo RitualFresh |
 | v1.2 | 2026-06-09 | Incorporación del backend inicial del módulo M02 para creación, consulta y edición de perfiles de cliente y trabajador. | Equipo RitualFresh |
 | v1.3 | 2026-06-09 | Finalización backend de las historias M01 y M02 con recuperación de contraseña, sesiones autenticadas, perfiles completos y trazabilidad por identificador. | Equipo RitualFresh |
+| v1.4 | 2026-06-09 | Incorporación del frontend React inicial para operar los flujos de usuarios, autenticación, recuperación de contraseña y perfiles. | Equipo RitualFresh |
