@@ -3,6 +3,7 @@
 out/
 build/
 bin/
+target/
 
 # React / Node.js
 node_modules/

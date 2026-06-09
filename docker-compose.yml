@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: ritualfresh-postgres
+    environment:
+      POSTGRES_DB: ritualfresh
+      POSTGRES_USER: ritualfresh
+      POSTGRES_PASSWORD: ritualfresh
+    ports:
+      - "5432:5432"
+    volumes:
+      - ritualfresh_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  ritualfresh_postgres_data:
