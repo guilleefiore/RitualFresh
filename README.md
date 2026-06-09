@@ -135,7 +135,7 @@ La implementación se organizará por módulos funcionales para mantener trazabi
 
 | Módulo | Identificador | Funcionalidades base |
 |---|---|---|
-| Gestión de usuarios y autenticación | M01 | Registro, inicio de sesión, recuperación de contraseña y roles. |
+| Gestión de usuarios y autenticación | M01 | Registro, inicio de sesión, recuperación de contraseña, validación de cuenta y roles. |
 | Gestión de perfiles | M02 | Perfil del trabajador, perfil del cliente, edición y visualización de datos. |
 | Búsqueda y selección | M03 | Buscador, filtros, resultados y ranking de trabajadores. |
 | Contratación del servicio | M04 | Solicitudes, aceptación/rechazo, estados, finalización y cancelación. |
@@ -182,14 +182,15 @@ También se contemplan reportes administrativos, como dashboard general, reporte
 
 ## Estructura inicial del proyecto
 
-La estructura inicial de código se organiza separando backend y frontend dentro del mismo repositorio. El backend se estructura como un proyecto Java orientado a objetos, sin Maven, agrupando los paquetes según las clases y responsabilidades del diagrama. El frontend se prepara como una aplicación React organizada por pantallas, componentes reutilizables, servicios y módulos funcionales.
+La estructura inicial de código se organiza separando backend y frontend dentro del mismo repositorio. El backend se estructura como un proyecto Java orientado a objetos con Maven y Spring Boot, agrupando los paquetes según las clases y responsabilidades del diagrama. El frontend se prepara como una aplicación React organizada por pantallas, componentes reutilizables, servicios y módulos funcionales.
 
 ```text
 backend/
+├── pom.xml
 └── src/
     ├── main/
     │   ├── java/
-    │   │   └── ar/edu/utn/frm/ritualfresh/
+    │   │   └── ritualfresh/
     │   │       ├── agenda/
     │   │       ├── calificaciones/
     │   │       ├── chat/
@@ -197,6 +198,7 @@ backend/
     │   │       ├── contrataciones/
     │   │       ├── notificaciones/
     │   │       ├── pagos/
+    │   │       ├── perfiles/
     │   │       ├── servicios/
     │   │       ├── solicitudes/
     │   │       ├── ubicaciones/
@@ -204,7 +206,7 @@ backend/
     │   └── resources/
     └── test/
         └── java/
-            └── ar/edu/utn/frm/ritualfresh/
+            └── ritualfresh/
 
 frontend/
 ├── public/
@@ -263,11 +265,73 @@ El equipo trabajará de forma colaborativa en las distintas etapas del desarroll
 
 ## Estado actual
 
-El proyecto se encuentra iniciando la etapa de Desarrollo e Implementación. Ya se elaboraron las etapas de Anteproyecto, Requerimientos y Diseño, y se está consolidando el repositorio para comenzar la implementación.
+El proyecto se encuentra en etapa de Desarrollo e Implementación. Ya se elaboraron las etapas de Anteproyecto, Requerimientos y Diseño, y se completó la base backend de las historias de usuario previstas para los módulos M01 y M02.
 
 ## Configuración local
 
 Cada integrante debe crear su propio archivo `.env` local con las variables de entorno necesarias para ejecutar el proyecto. El archivo `.env` y sus variantes no deben subirse al repositorio porque pueden contener credenciales, rutas locales o datos sensibles.
+
+El backend utiliza JPA/Hibernate y PostgreSQL para persistir los datos iniciales de los módulos M01 y M02. La configuración por defecto espera una base local con estos valores:
+
+| Variable | Valor por defecto |
+|---|---|
+| `RITUALFRESH_DB_URL` | `jdbc:postgresql://localhost:5432/ritualfresh` |
+| `RITUALFRESH_DB_USER` | `ritualfresh` |
+| `RITUALFRESH_DB_PASSWORD` | `ritualfresh` |
+
+Para levantar PostgreSQL con Docker:
+
+```bash
+docker compose up -d postgres
+```
+
+Para ejecutar las pruebas del backend:
+
+```bash
+cd backend
+mvn test
+```
+
+Para iniciar el backend local:
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Endpoints iniciales del módulo M01:
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/usuarios/registro` | Registra un usuario cliente o trabajador y genera token de validación. |
+| GET | `/api/usuarios/validacion?token=...` | Valida la cuenta asociada al token recibido. |
+| POST | `/api/usuarios/login` | Inicia sesión con correo y contraseña si la cuenta está activa y genera `tokenSesion`. |
+| POST | `/api/usuarios/recuperacion-contrasena` | Solicita recuperación de contraseña mediante correo electrónico registrado. |
+| POST | `/api/usuarios/recuperacion-contrasena/confirmacion` | Confirma el cambio de contraseña mediante token de recuperación. |
+| POST | `/api/usuarios/logout` | Cierra la sesión activa usando `Authorization: Bearer <tokenSesion>`. |
+
+Hasta integrar un servicio real de correo, los endpoints de validación de cuenta y recuperación de contraseña devuelven los tokens en la respuesta para facilitar las pruebas locales.
+
+Endpoints iniciales del módulo M02:
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/perfiles/clientes` | Crea el perfil del cliente autenticado usando `Authorization: Bearer <tokenSesion>`. |
+| POST | `/api/perfiles/trabajadores` | Crea el perfil del trabajador autenticado usando `Authorization: Bearer <tokenSesion>`. |
+| GET | `/api/perfiles/me` | Consulta el perfil del usuario autenticado. |
+| PUT | `/api/perfiles/clientes/me` | Edita el perfil del cliente autenticado. |
+| PUT | `/api/perfiles/trabajadores/me` | Edita el perfil del trabajador autenticado. |
+
+### Trazabilidad de historias implementadas
+
+| Identificación | Módulo | Alcance backend implementado |
+|---|---|---|
+| `US01-M01-RF01` | M01 | Registro de usuario cliente o trabajador, validación de campos obligatorios, correo único, formato de correo y confirmación de contraseña. |
+| `US04-M01-RF04` | M01 | Validación de cuenta por token para cumplir la precondición de inicio de sesión con cuenta validada. |
+| `US02-M01-RF02` | M01 | Inicio de sesión con correo y contraseña, rechazo de credenciales inválidas, cuenta pendiente o cuenta no activa, y generación de sesión. |
+| `US03-M01-RF03` | M01 | Recuperación de contraseña por correo registrado, token con vencimiento y confirmación de nueva contraseña. |
+| `US01-M02-RF01` | M02 | Perfil del trabajador autenticado con descripción, años de experiencia, servicios ofrecidos, zona de trabajo, disponibilidad y precio por hora orientativo. |
+| `US02-M02-RF02` | M02 | Perfil del cliente autenticado con teléfono de contacto, dirección y preferencias de contratación. |
 
 ## Versiones
 
@@ -280,3 +344,9 @@ Cada integrante debe crear su propio archivo `.env` local con las variables de e
 | v0.5 | 2026-06-08 | Incorporación de la estructura inicial del frontend React por módulos funcionales. | Equipo RitualFresh |
 | v0.6 | 2026-06-08 | Incorporación de `.gitignore` y plantilla `.env.example` para configuración local. | Equipo RitualFresh |
 | v0.7 | 2026-06-08 | Eliminación de `.env.example` del repositorio y ajuste de exclusión de variables de entorno. | Equipo RitualFresh |
+| v0.8 | 2026-06-09 | Incorporación de la base backend para registro, validación de cuenta e inicio de sesión del módulo M01. | Equipo RitualFresh |
+| v0.9 | 2026-06-09 | Incorporación de Maven, JUnit 5 y Lombok para pruebas automatizadas y reducción de código repetitivo. | Equipo RitualFresh |
+| v1.0 | 2026-06-09 | Conversión del backend a Spring Boot y exposición de endpoints REST iniciales para el módulo M01. | Equipo RitualFresh |
+| v1.1 | 2026-06-09 | Migración del módulo M01 a persistencia con JPA/Hibernate, PostgreSQL y BCrypt para contraseñas. | Equipo RitualFresh |
+| v1.2 | 2026-06-09 | Incorporación del backend inicial del módulo M02 para creación, consulta y edición de perfiles de cliente y trabajador. | Equipo RitualFresh |
+| v1.3 | 2026-06-09 | Finalización backend de las historias M01 y M02 con recuperación de contraseña, sesiones autenticadas, perfiles completos y trazabilidad por identificador. | Equipo RitualFresh |
