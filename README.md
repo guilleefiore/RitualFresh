@@ -45,32 +45,6 @@ El sistema contempla los siguientes módulos principales:
 - Leaflet.
 - OpenStreetMap.
 
-## Estructura inicial sugerida
-
-```txt
-ritualfresh/
-├── backend/
-├── frontend/
-├── docs/
-├── postman/
-├── docker/
-└── README.md
-```
-
-## Documentación interna
-
-La carpeta `docs/` contiene información de apoyo para el desarrollo del sistema:
-
-- Contexto funcional.
-- Alcance.
-- Módulos.
-- Reglas de negocio.
-- Historias de usuario.
-- Guía visual.
-- Reportes.
-- Estrategia de testing.
-- Guía técnica de implementación.
-
 ## Estado del proyecto
 
 Proyecto académico en etapa de inicialización técnica para desarrollo e implementación.
