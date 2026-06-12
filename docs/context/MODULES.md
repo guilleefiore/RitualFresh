@@ -1,0 +1,110 @@
+# Módulos funcionales
+
+## M01 - Gestión de Usuarios y Autenticación
+
+Gestiona registro, inicio de sesión, recuperación de contraseña, roles y acceso al sistema.
+
+Historias principales:
+
+- US01-M01-RF01: Registro de usuario.
+- US02-M01-RF02: Inicio de sesión.
+- US03-M01-RF03: Recuperación de contraseña.
+
+## M02 - Gestión de Perfiles
+
+Permite a clientes y trabajadores completar y administrar su información personal y profesional.
+
+Historias principales:
+
+- US01-M02-RF01: Perfil del trabajador.
+- US02-M02-RF02: Perfil del cliente.
+
+## M03 - Búsqueda y Selección
+
+Permite buscar trabajadores o servicios y aplicar filtros por categoría, ubicación y precio. También contempla el cálculo de ranking.
+
+Historias principales:
+
+- US01-M03-RF01: Búsqueda por trabajador o servicio.
+- US02-M03-RF02: Filtrar por categoría.
+- US03-M03-RF03: Filtrar por ubicación.
+- US04-M03-RF04: Filtrar por precio.
+- US05-M03-RF05: Ordenar ranking.
+
+## M04 - Contratación del Servicio
+
+Gestiona solicitudes de contratación, aceptación o rechazo, visualización de contrataciones, finalización y cancelaciones.
+
+Historias principales:
+
+- US01-M04-RF01: Solicitud de contratación.
+- US02-M04-RF02: Gestión de solicitud.
+- US03-M04-RF03: Visualización de contrataciones.
+- US04-M04-RF04: Confirmación de finalización.
+- US05-M04-RF05: Cancelación del cliente.
+- US06-M04-RF06: Cancelación del trabajador.
+
+## M05 - Chat y Comunicación
+
+Permite comunicación en tiempo real entre cliente y trabajador, mensajes predeterminados, indicador de no leídos, historial y estado de conexión.
+
+Historias principales:
+
+- US01-M05-RF01: Mensajería en tiempo real.
+- US02-M05-RF02: Mensajes predeterminados para negociación.
+- US03-M05-RF03: Notificaciones e indicador de no leídos.
+- US04-M05-RF04: Persistencia e historial.
+- US05-M05-RF05: Estado de conexión.
+
+## M06 - Historial y Estadísticas
+
+Permite consultar historial de servicios y visualizar estadísticas de actividad para clientes y trabajadores.
+
+Historias principales:
+
+- US01-M06-RF01: Visualización de historial de servicios.
+- US02-M06-RF02: Estadísticas del trabajador.
+- US03-M06-RF03: Estadísticas del cliente.
+
+## M07 - Calificaciones y Reputación
+
+Permite calificar una contratación finalizada y alimentar la reputación del usuario calificado.
+
+Historia principal:
+
+- US01-M07-RF01: Calificar servicio.
+
+## M08 - Notificaciones
+
+Gestiona notificaciones in-app, badge de no leídas, panel desplegable, marcado de lectura y generación automática por eventos relevantes.
+
+Historias principales:
+
+- US01-M08-RF01: Panel de notificaciones in-app.
+- US02-M08-RF02: Interacción y marcado de lectura.
+- US03-M08-RF03: Generación automática de notificaciones.
+
+## M09 - Pagos
+
+Integra checkout con Mercado Pago, webhooks, registro de transacciones, reembolsos, compensaciones, strikes y liquidación al trabajador.
+
+Historias principales:
+
+- US01-M09-RF01: Checkout Mercado Pago.
+- US02-M09-RF02: Recepción de notificaciones por pago aprobado.
+- US03-M09-RF03: Recepción de notificaciones por pagos rechazados o pendientes.
+- US04-M09-RF04: Registro de transacciones.
+- US05-M09-RF05: Visualización de pago en historial de cliente.
+- US06-M09-RF06: Desglose de ingresos del trabajador.
+- US07-M09-RF07: Reembolso por cancelación del cliente.
+- US08-M09-RF08: Cancelación del trabajador y strikes.
+- US09-M09-RF09: Limpieza progresiva mensual de strikes.
+- US10-M09-RF10: Liquidación automática de fondos al trabajador.
+
+## M10 - Geolocalización
+
+Permite seleccionar una ubicación en mapa y asociarla a perfil o contratación.
+
+Historia principal:
+
+- US01-M10-RF01: Seleccionar ubicación.
