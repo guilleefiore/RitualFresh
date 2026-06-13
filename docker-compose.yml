@@ -10,6 +10,25 @@ services:
       - "5432:5432"
     volumes:
       - ritualfresh_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ritualfresh -d ritualfresh"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: ritualfresh-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RITUALFRESH_DB_URL: jdbc:postgresql://postgres:5432/ritualfresh
+      RITUALFRESH_DB_USER: ritualfresh
+      RITUALFRESH_DB_PASSWORD: ritualfresh
+    ports:
+      - "8080:8080"
 
 volumes:
   ritualfresh_postgres_data:
