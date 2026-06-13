@@ -3,11 +3,11 @@ import { Button, Field } from '../../../shared/components/ui.jsx';
 
 export default function RegisterForm({ onSubmit }) {
   const [form, setForm] = useState({
-    nombre: '',
-    apellido: '',
-    mail: '',
-    contrasena: '',
-    confirmacionContrasena: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   });
 
   function handleSubmit(event) {
@@ -18,22 +18,22 @@ export default function RegisterForm({ onSubmit }) {
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
       <Field label="Nombre" icon="person">
-        <input value={form.nombre} onChange={(event) => setForm((current) => ({ ...current, nombre: event.target.value }))} />
+        <input value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} />
       </Field>
       <Field label="Apellido" icon="badge">
-        <input value={form.apellido} onChange={(event) => setForm((current) => ({ ...current, apellido: event.target.value }))} />
+        <input value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} />
       </Field>
       <Field label="Correo electrónico" icon="mail">
-        <input type="email" value={form.mail} onChange={(event) => setForm((current) => ({ ...current, mail: event.target.value }))} />
+        <input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
       </Field>
       <Field label="Contraseña" icon="lock">
-        <input type="password" value={form.contrasena} onChange={(event) => setForm((current) => ({ ...current, contrasena: event.target.value }))} />
+        <input type="password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
       </Field>
       <Field label="Confirmación" icon="verified_user">
         <input
           type="password"
-          value={form.confirmacionContrasena}
-          onChange={(event) => setForm((current) => ({ ...current, confirmacionContrasena: event.target.value }))}
+          value={form.confirmPassword}
+          onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
         />
       </Field>
       <Button icon="person_add">Crear cuenta</Button>

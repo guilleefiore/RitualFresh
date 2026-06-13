@@ -1,7 +1,7 @@
-import { notifications } from '../../../shared/mocks/ritualFreshData.js';
+import { notifications } from '../../../shared/mocks/mockData.js';
 import { Badge, Button, MaterialIcon, SectionTitle } from '../../../shared/components/ui.jsx';
 
-export default function NotificacionesView({ onNotify }) {
+export default function NotificationsPage({ onNotify }) {
   return (
     <div className="module-layout">
       <section className="module-header">

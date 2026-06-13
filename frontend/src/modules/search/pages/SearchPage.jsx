@@ -1,7 +1,7 @@
-import { workers } from '../../../shared/mocks/ritualFreshData.js';
+import { workers } from '../../../shared/mocks/mockData.js';
 import { Badge, Button, Field, MaterialIcon, SectionTitle, WorkerCard } from '../../../shared/components/ui.jsx';
 
-export default function BusquedaView({ onSelectWorker }) {
+export default function SearchPage({ onSelectWorker }) {
   return (
     <div className="module-layout">
       <section className="module-header">

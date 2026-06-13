@@ -1,4 +1,4 @@
-import { historyRows, kpis } from '../../../shared/mocks/ritualFreshData.js';
+import { historyRows, kpis } from '../../../shared/mocks/mockData.js';
 import { Badge, Button, KpiCard, SectionTitle, StatusTable } from '../../../shared/components/ui.jsx';
 
 const chartItems = [
@@ -8,7 +8,7 @@ const chartItems = [
   ['Reclamos', '9%'],
 ];
 
-export default function HistorialView() {
+export default function HistoryPage() {
   return (
     <div className="module-layout">
       <section className="module-header">
