@@ -1,29 +1,7 @@
 import { useEffect, useState } from 'react';
-import {
-  navigationItems,
-  roleOptions,
-  workers,
-} from './ritualFreshData.js';
-import { Badge, Button, ConfirmModal, MaterialIcon, Snackbar } from '../components/ui.jsx';
-import DashboardView from '../pages/DashboardView.jsx';
-import BusquedaView from '../features/busqueda/BusquedaView.jsx';
-import PerfilView from '../features/perfiles/PerfilView.jsx';
-import ContratacionView from '../features/contrataciones/ContratacionView.jsx';
-import ChatView from '../features/chat/ChatView.jsx';
-import HistorialView from '../features/historial/HistorialView.jsx';
-import NotificacionesView from '../features/notificaciones/NotificacionesView.jsx';
-import PagosUbicacionView from '../features/pagos/PagosUbicacionView.jsx';
-
-const viewComponents = {
-  dashboard: DashboardView,
-  busqueda: BusquedaView,
-  perfil: PerfilView,
-  contratacion: ContratacionView,
-  chat: ChatView,
-  historial: HistorialView,
-  notificaciones: NotificacionesView,
-  pagos: PagosUbicacionView,
-};
+import { Badge, Button, ConfirmModal, MaterialIcon, Snackbar } from '../shared/components/ui.jsx';
+import { navigationItems, roleOptions, viewComponents } from './router.jsx';
+import { workers } from '../shared/mocks/ritualFreshData.js';
 
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');

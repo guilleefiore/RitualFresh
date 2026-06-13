@@ -33,32 +33,30 @@ Este documento centraliza criterios técnicos para implementar RitualFresh de fo
 ```txt
 backend/src/main/java/com/ritualfresh/
 ├── auth/
-├── users/
+│   ├── controller/
+│   ├── service/
+│   ├── repository/
+│   ├── dto/
+│   └── model/
 ├── profiles/
-├── services/
-├── search/
-├── hiring/
-├── chat/
-├── history/
-├── ratings/
-├── notifications/
+│   ├── controller/
+│   ├── service/
+│   ├── repository/
+│   ├── dto/
+│   └── model/
+├── contracts/
 ├── payments/
+├── notifications/
+├── reviews/
+├── chat/
 ├── geolocation/
-├── reports/
 └── shared/
+    ├── exception/
+    ├── config/
+    └── security/
 ```
 
-Cada módulo puede contener:
-
-```txt
-controller/
-service/
-repository/
-domain/
-dto/
-mapper/
-exception/
-```
+Cada módulo puede contener, como mínimo, `controller`, `service`, `repository`, `dto` y `model`.
 
 ## Reglas de implementación backend
 
@@ -79,23 +77,27 @@ exception/
 
 - React 19.
 - Bootstrap 5.3.x.
-- Leaflet.
-- OpenStreetMap.
+- Google Maps API.
+- Node.js 22 LTS.
 
 ### Estructura sugerida
 
 ```txt
 frontend/src/
 ├── app/
-├── pages/
-├── components/
-├── services/
-├── hooks/
-├── routes/
-├── layouts/
-├── constants/
-├── utils/
-└── styles/
+│   ├── App.jsx
+│   └── router.jsx
+├── modules/
+│   ├── auth/
+│   ├── profiles/
+│   ├── search/
+│   └── contracts/
+├── shared/
+│   ├── components/
+│   ├── services/
+│   ├── constants/
+│   └── styles/
+└── main.jsx
 ```
 
 ## Reglas de implementación frontend
