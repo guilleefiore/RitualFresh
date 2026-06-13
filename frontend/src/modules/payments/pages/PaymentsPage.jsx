@@ -1,6 +1,6 @@
 import { Badge, Button, Field, MaterialIcon, SectionTitle } from '../../../shared/components/ui.jsx';
 
-export default function PagosUbicacionView({ onNotify }) {
+export default function PaymentsPage({ onNotify }) {
   return (
     <div className="module-layout">
       <section className="module-header">

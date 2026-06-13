@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, ConfirmModal, MaterialIcon, Snackbar } from '../shared/components/ui.jsx';
 import { navigationItems, roleOptions, viewComponents } from './router.jsx';
-import { workers } from '../shared/mocks/ritualFreshData.js';
+import { workers } from '../shared/mocks/mockData.js';
 
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -20,7 +20,7 @@ export default function App() {
 
   function handleWorkerSelect(worker) {
     setSelectedWorker(worker);
-    setActiveView('contratacion');
+    setActiveView('contracts');
     setSnackbar(`Se seleccionó a ${worker.name} para iniciar la solicitud.`);
   }
 
@@ -90,7 +90,7 @@ export default function App() {
               ))}
             </div>
 
-            <button className="icon-button" type="button" aria-label="Notificaciones" onClick={() => setActiveView('notificaciones')}>
+            <button className="icon-button" type="button" aria-label="Notificaciones" onClick={() => setActiveView('notifications')}>
               <MaterialIcon name="notifications" />
               <span className="notification-dot">5</span>
             </button>

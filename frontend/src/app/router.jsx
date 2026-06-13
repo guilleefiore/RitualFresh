@@ -1,7 +1,7 @@
 import HomePage from '../modules/home/pages/HomePage.jsx';
 import SearchPage from '../modules/search/pages/SearchPage.jsx';
 import WorkerProfilePage from '../modules/profiles/pages/WorkerProfilePage.jsx';
-import ContractsPage from '../modules/contracts/pages/ContractsPage.jsx';
+import ServiceRequestPage from '../modules/contracts/pages/ServiceRequestPage.jsx';
 import ChatPage from '../modules/chat/pages/ChatPage.jsx';
 import HistoryPage from '../modules/history/pages/HistoryPage.jsx';
 import NotificationsPage from '../modules/notifications/pages/NotificationsPage.jsx';
@@ -11,13 +11,13 @@ import { roleOptions } from '../shared/constants/roles.js';
 
 export const viewComponents = {
   dashboard: HomePage,
-  busqueda: SearchPage,
-  perfil: WorkerProfilePage,
-  contratacion: ContractsPage,
+  search: SearchPage,
+  profile: WorkerProfilePage,
+  contracts: ServiceRequestPage,
   chat: ChatPage,
-  historial: HistoryPage,
-  notificaciones: NotificationsPage,
-  pagos: PaymentsPage,
+  history: HistoryPage,
+  notifications: NotificationsPage,
+  payments: PaymentsPage,
 };
 
 export { navigationItems, roleOptions };

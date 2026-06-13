@@ -3,10 +3,10 @@ import {
   notifications,
   serviceRequests,
   workers,
-} from '../../../shared/mocks/ritualFreshData.js';
+} from '../../../shared/mocks/mockData.js';
 import { Badge, Button, KpiCard, MaterialIcon, SectionTitle, WorkerCard } from '../../../shared/components/ui.jsx';
 
-export default function DashboardView({ role, onNavigate, onSelectWorker }) {
+export default function HomePage({ role, onNavigate, onSelectWorker }) {
   return (
     <div className="page-grid">
       <section className="hero-panel">
@@ -18,10 +18,10 @@ export default function DashboardView({ role, onNavigate, onSelectWorker }) {
             calificaciones, pagos externos y ubicación sin gestionar datos financieros sensibles.
           </p>
           <div className="hero-actions">
-            <Button icon="manage_search" onClick={() => onNavigate('busqueda')}>
+            <Button icon="manage_search" onClick={() => onNavigate('search')}>
               Buscar trabajador
             </Button>
-            <Button variant="outlined" icon="assignment_turned_in" onClick={() => onNavigate('contratacion')}>
+            <Button variant="outlined" icon="assignment_turned_in" onClick={() => onNavigate('contracts')}>
               Ver solicitud activa
             </Button>
           </div>

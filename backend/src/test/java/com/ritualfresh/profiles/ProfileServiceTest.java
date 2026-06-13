@@ -1,0 +1,255 @@
+package com.ritualfresh.profiles;
+
+import com.ritualfresh.auth.InMemoryUserRepository;
+import com.ritualfresh.auth.InMemoryUserSessionRepository;
+import com.ritualfresh.auth.LoginResult;
+import com.ritualfresh.auth.RegisterUserRequest;
+import com.ritualfresh.auth.RegisterUserResult;
+import com.ritualfresh.auth.User;
+import com.ritualfresh.auth.UserRepository;
+import com.ritualfresh.auth.UserRole;
+import com.ritualfresh.auth.UserService;
+import com.ritualfresh.auth.UserSessionRepository;
+import com.ritualfresh.shared.BusinessRuleException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class ProfileServiceTest {
+    private UserService userService;
+    private ProfileService profileService;
+
+    @BeforeEach
+    void setUp() {
+        UserRepository userRepository = new InMemoryUserRepository();
+        UserSessionRepository userSessionRepository = new InMemoryUserSessionRepository();
+        userService = new UserService(userRepository, userSessionRepository);
+        profileService = new ProfileService(
+                userService,
+                new InMemoryClientProfileRepository(),
+                new InMemoryWorkerProfileRepository());
+    }
+
+    @Test
+    void us02M02Rf02CreatesClientProfileWithValidData() {
+        LoginResult session = registerValidateAndLoginClient();
+
+        UserProfileResult result = profileService.createClientProfile(
+                session.sessionToken(),
+                validClientRequest());
+
+        assertEquals(ProfileType.CLIENT, result.profileType());
+        assertEquals(session.user().getId(), result.userId());
+        assertEquals("https://cdn.example.com/cliente.png", result.photoUrl());
+        assertEquals("2615555555", result.contactPhone());
+        assertEquals("San Martin", result.streetName());
+        assertEquals("Limpieza semanal por la manana", result.hiringPreferences());
+        assertEquals(0, result.clientRating());
+    }
+
+    @Test
+    void us02M02Rf02PreventsClientPhoneWithInvalidFormat() {
+        LoginResult session = registerValidateAndLoginClient();
+        CreateClientProfileRequest request = new CreateClientProfileRequest(
+                null,
+                "abc",
+                "San Martin",
+                "123",
+                null,
+                null,
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                "Limpieza semanal");
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
+                session.sessionToken(),
+                request));
+
+        assertEquals("El telefono de contacto no posee un formato valido.", exception.getMessage());
+    }
+
+    @Test
+    void us02M02Rf02PreventsClientAddressWithInvalidFormat() {
+        LoginResult session = registerValidateAndLoginClient();
+        CreateClientProfileRequest request = new CreateClientProfileRequest(
+                null,
+                "2615555555",
+                "!",
+                "123",
+                null,
+                null,
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                "Limpieza semanal");
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
+                session.sessionToken(),
+                request));
+
+        assertEquals("La direccion ingresada no posee un formato valido.", exception.getMessage());
+    }
+
+    @Test
+    void us01M02Rf01CreatesEditsAndGetsWorkerProfileWithValidData() {
+        LoginResult session = registerValidateAndLoginWorker();
+        profileService.createWorkerProfile(
+                session.sessionToken(),
+                validWorkerRequest());
+
+        UserProfileResult updated = profileService.updateWorkerProfile(
+                session.sessionToken(),
+                new UpdateWorkerProfileRequest(
+                        "https://cdn.example.com/trabajador.png",
+                        "Limpieza general, profunda y mantenimiento preventivo",
+                        4,
+                        "Limpieza general, limpieza profunda, mantenimiento",
+                        "Gran Mendoza",
+                        "Lunes a viernes de 9 a 17",
+                        new BigDecimal("4500.00")));
+        UserProfileResult obtained = profileService.getMyProfile(session.sessionToken());
+
+        assertEquals(ProfileType.WORKER, updated.profileType());
+        assertEquals("Limpieza general, profunda y mantenimiento preventivo", obtained.description());
+        assertEquals(4, obtained.yearsOfExperience());
+        assertEquals("Gran Mendoza", obtained.workArea());
+        assertEquals(new BigDecimal("4500.00"), obtained.hourlyRate());
+        assertEquals(0, obtained.rankingPosition());
+    }
+
+    @Test
+    void us01M02Rf01PreventsNegativeExperienceYears() {
+        LoginResult session = registerValidateAndLoginWorker();
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createWorkerProfile(
+                session.sessionToken(),
+                new CreateWorkerProfileRequest(
+                        null,
+                        "Limpieza profunda",
+                        -1,
+                        "Limpieza profunda",
+                        "Mendoza",
+                        "Turno tarde",
+                        new BigDecimal("3500.00"))));
+
+        assertEquals("Los anios de experiencia no pueden ser negativos.", exception.getMessage());
+    }
+
+    @Test
+    void us01M02Rf01PreventsNonPositiveHourlyRate() {
+        LoginResult session = registerValidateAndLoginWorker();
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createWorkerProfile(
+                session.sessionToken(),
+                new CreateWorkerProfileRequest(
+                        null,
+                        "Limpieza profunda",
+                        2,
+                        "Limpieza profunda",
+                        "Mendoza",
+                        "Turno tarde",
+                        BigDecimal.ZERO)));
+
+        assertEquals("El precio por hora orientativo debe ser mayor a cero.", exception.getMessage());
+    }
+
+    @Test
+    void preventsCreatingClientProfileForWorkerUser() {
+        LoginResult session = registerValidateAndLoginWorker();
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
+                session.sessionToken(),
+                validClientRequest()));
+
+        assertEquals("El rol del usuario no permite crear un perfil de cliente.", exception.getMessage());
+    }
+
+    @Test
+    void preventsCreatingMoreThanOneProfilePerUser() {
+        LoginResult session = registerValidateAndLoginClient();
+        profileService.createClientProfile(session.sessionToken(), validClientRequest());
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
+                session.sessionToken(),
+                validClientRequest()));
+
+        assertEquals("El usuario ya posee un perfil creado.", exception.getMessage());
+    }
+
+    @Test
+    void preventsManagingProfileWithoutSession() {
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
+                "token-inexistente",
+                validClientRequest()));
+
+        assertEquals("Debe iniciar sesion para acceder a esta funcionalidad.", exception.getMessage());
+    }
+
+    private LoginResult registerValidateAndLoginClient() {
+        User user = registerAndValidateClient();
+        return userService.login(new com.ritualfresh.auth.LoginRequest(user.getEmail(), "clave123"));
+    }
+
+    private LoginResult registerValidateAndLoginWorker() {
+        User user = registerAndValidateWorker();
+        return userService.login(new com.ritualfresh.auth.LoginRequest(user.getEmail(), "clave123"));
+    }
+
+    private User registerAndValidateClient() {
+        RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
+                "Guillermina",
+                "Fiore",
+                "12345678",
+                "2610000000",
+                "guillermina@example.com",
+                "clave123",
+                "clave123",
+                UserRole.CLIENT));
+
+        return userService.validateAccount(result.accountValidationToken());
+    }
+
+    private User registerAndValidateWorker() {
+        RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
+                "Joaquin",
+                "Becerra",
+                "22333444",
+                "2612222222",
+                "joaquin@example.com",
+                "clave123",
+                "clave123",
+                UserRole.WORKER));
+
+        return userService.validateAccount(result.accountValidationToken());
+    }
+
+    private CreateClientProfileRequest validClientRequest() {
+        return new CreateClientProfileRequest(
+                "https://cdn.example.com/cliente.png",
+                "2615555555",
+                "San Martin",
+                "123",
+                "2",
+                "A",
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                "Limpieza semanal por la manana");
+    }
+
+    private CreateWorkerProfileRequest validWorkerRequest() {
+        return new CreateWorkerProfileRequest(
+                null,
+                "Limpieza profunda y mantenimiento del hogar",
+                3,
+                "Limpieza general y profunda",
+                "Godoy Cruz y Ciudad de Mendoza",
+                "Lunes a viernes de 8 a 16",
+                new BigDecimal("4000.00"));
+    }
+}

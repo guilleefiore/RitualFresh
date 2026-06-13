@@ -1,4 +1,4 @@
-import { conversations, messages } from '../../../shared/mocks/ritualFreshData.js';
+import { conversations, messages } from '../../../shared/mocks/mockData.js';
 import { Badge, Button, MaterialIcon, SectionTitle } from '../../../shared/components/ui.jsx';
 
 export default function ChatView({ onNotify }) {
