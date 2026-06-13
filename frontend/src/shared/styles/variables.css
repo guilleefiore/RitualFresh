@@ -1,0 +1,9 @@
+:root {
+  --rf-color-primary: #1565c0;
+  --rf-color-primary-dark: #0d47a1;
+  --rf-color-secondary: #26a69a;
+  --rf-color-accent: #ffa726;
+  --rf-color-background: #f5f7fa;
+  --rf-color-error: #b3261e;
+  --rf-font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
