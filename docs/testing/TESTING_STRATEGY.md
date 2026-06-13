@@ -48,6 +48,37 @@ Herramientas sugeridas:
 - REST Client.
 - Swagger/OpenAPI.
 
+#### Prueba manual con Postman
+
+Para la validación local del backend y de la persistencia en PostgreSQL se recomienda un flujo manual simple en Postman:
+
+1. `POST /api/users/register`
+   - Verifica registro de usuario y generación del `accountValidationToken`.
+2. `GET /api/users/validation?token=...`
+   - Verifica activación de la cuenta.
+3. `POST /api/users/login`
+   - Verifica autenticación y generación del `sessionToken`.
+4. `GET /api/profiles/me`
+   - Verifica acceso autenticado con `Authorization: Bearer <sessionToken>`.
+5. `POST /api/profiles/clientes` o `POST /api/profiles/trabajadores`
+   - Verifica persistencia real del perfil asociado al usuario autenticado.
+
+Configuración mínima sugerida:
+
+- Base URL local: `http://localhost:8080`.
+- Header común: `Content-Type: application/json`.
+- Header para endpoints protegidos: `Authorization: Bearer <sessionToken>`.
+
+La confirmación de persistencia se completa revisando las tablas creadas por Hibernate en PostgreSQL, por ejemplo `users`, `user_sessions`, `client_profiles` y `worker_profiles`.
+
+Si se documenta evidencia manual, conviene registrar:
+
+- request utilizado;
+- token obtenido;
+- respuesta esperada;
+- respuesta observada;
+- estado final de la prueba.
+
 ### Pruebas de seguridad
 
 Casos mínimos:
