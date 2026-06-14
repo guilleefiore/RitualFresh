@@ -1,4 +1,4 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.model;
 
 import com.ritualfresh.auth.model.User;
 import jakarta.persistence.Column;
@@ -88,7 +88,7 @@ public class ClientProfile {
         this.hiringPreferences = hiringPreferences;
     }
 
-    void assignIdIfMissing(long id) {
+    public void assignIdIfMissing(long id) {
         if (this.id == null) {
             this.id = id;
         }

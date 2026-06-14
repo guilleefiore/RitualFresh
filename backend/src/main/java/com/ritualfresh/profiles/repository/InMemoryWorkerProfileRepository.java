@@ -1,5 +1,6 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.repository;
 
+import com.ritualfresh.profiles.model.WorkerProfile;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;

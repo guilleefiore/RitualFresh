@@ -1,5 +1,6 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.repository;
 
+import com.ritualfresh.profiles.model.ClientProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

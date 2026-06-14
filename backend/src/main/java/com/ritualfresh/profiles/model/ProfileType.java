@@ -1,4 +1,4 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.model;
 
 public enum ProfileType {
     CLIENT,

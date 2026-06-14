@@ -1,8 +1,8 @@
-package com.ritualfresh.profiles.controller;
+package com.ritualfresh.profiles.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record UpdateClientProfileApiRequest(
+public record CreateClientProfileApiRequest(
         String photoUrl,
         @NotBlank String contactPhone,
         @NotBlank String streetName,

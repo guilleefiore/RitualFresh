@@ -1,4 +1,4 @@
-package com.ritualfresh.profiles.controller;
+package com.ritualfresh.profiles.dto;
 
 public record ProfileOperationApiResponse(
         String message,

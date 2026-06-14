@@ -1,8 +1,17 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.service;
 
 import com.ritualfresh.auth.model.User;
 import com.ritualfresh.auth.model.UserRole;
 import com.ritualfresh.auth.service.UserService;
+import com.ritualfresh.profiles.dto.CreateClientProfileRequest;
+import com.ritualfresh.profiles.dto.CreateWorkerProfileRequest;
+import com.ritualfresh.profiles.dto.UpdateClientProfileRequest;
+import com.ritualfresh.profiles.dto.UpdateWorkerProfileRequest;
+import com.ritualfresh.profiles.dto.UserProfileResult;
+import com.ritualfresh.profiles.model.ClientProfile;
+import com.ritualfresh.profiles.model.WorkerProfile;
+import com.ritualfresh.profiles.repository.ClientProfileRepository;
+import com.ritualfresh.profiles.repository.WorkerProfileRepository;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

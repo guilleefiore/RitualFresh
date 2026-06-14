@@ -1,6 +1,6 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.dto;
 
-public record UpdateClientProfileRequest(
+public record CreateClientProfileRequest(
         String photoUrl,
         String contactPhone,
         String streetName,

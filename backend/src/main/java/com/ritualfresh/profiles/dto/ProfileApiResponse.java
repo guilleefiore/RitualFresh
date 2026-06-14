@@ -1,7 +1,6 @@
-package com.ritualfresh.profiles.controller;
+package com.ritualfresh.profiles.dto;
 
-import com.ritualfresh.profiles.ProfileType;
-import com.ritualfresh.profiles.UserProfileResult;
+import com.ritualfresh.profiles.model.ProfileType;
 
 import java.math.BigDecimal;
 

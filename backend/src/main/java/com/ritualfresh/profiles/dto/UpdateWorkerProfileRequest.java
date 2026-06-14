@@ -1,8 +1,8 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.dto;
 
 import java.math.BigDecimal;
 
-public record CreateWorkerProfileRequest(
+public record UpdateWorkerProfileRequest(
         String photoUrl,
         String description,
         Integer yearsOfExperience,

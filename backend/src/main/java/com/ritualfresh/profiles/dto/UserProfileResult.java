@@ -1,6 +1,9 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.dto;
 
 import com.ritualfresh.auth.model.User;
+import com.ritualfresh.profiles.model.ClientProfile;
+import com.ritualfresh.profiles.model.ProfileType;
+import com.ritualfresh.profiles.model.WorkerProfile;
 
 import java.math.BigDecimal;
 

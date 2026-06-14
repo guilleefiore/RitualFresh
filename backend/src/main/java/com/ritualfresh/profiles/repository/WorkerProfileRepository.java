@@ -1,4 +1,6 @@
-package com.ritualfresh.profiles;
+package com.ritualfresh.profiles.repository;
+
+import com.ritualfresh.profiles.model.WorkerProfile;
 
 import java.util.Optional;
 
