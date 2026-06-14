@@ -5,7 +5,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.ritualfresh.shared.BusinessRuleException;
+import com.ritualfresh.shared.exception.BusinessRuleException;
 
 import java.util.stream.Collectors;
 

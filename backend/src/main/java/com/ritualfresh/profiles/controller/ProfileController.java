@@ -5,7 +5,7 @@ import com.ritualfresh.profiles.CreateWorkerProfileRequest;
 import com.ritualfresh.profiles.ProfileService;
 import com.ritualfresh.profiles.UpdateClientProfileRequest;
 import com.ritualfresh.profiles.UpdateWorkerProfileRequest;
-import com.ritualfresh.shared.BusinessRuleException;
+import com.ritualfresh.shared.exception.BusinessRuleException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;

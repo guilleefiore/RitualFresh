@@ -1,9 +1,9 @@
 package com.ritualfresh.profiles;
 
-import com.ritualfresh.auth.User;
-import com.ritualfresh.auth.UserRole;
-import com.ritualfresh.auth.UserService;
-import com.ritualfresh.shared.BusinessRuleException;
+import com.ritualfresh.auth.model.User;
+import com.ritualfresh.auth.model.UserRole;
+import com.ritualfresh.auth.service.UserService;
+import com.ritualfresh.shared.exception.BusinessRuleException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

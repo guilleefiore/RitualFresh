@@ -1,23 +1,17 @@
-# Java
+# Java / Maven
 *.class
+target/
 out/
 build/
 bin/
-target/
-
-# React / Node.js
-node_modules/
-dist/
-.vite/
-coverage/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
 # Variables de entorno
 .env
 .env.*
+
+# Postman
+postman/
+.postman/
 
 # IDEs
 .idea/

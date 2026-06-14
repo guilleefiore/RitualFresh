@@ -1,6 +1,6 @@
 package com.ritualfresh.profiles;
 
-import com.ritualfresh.auth.User;
+import com.ritualfresh.auth.model.User;
 
 import java.math.BigDecimal;
 
