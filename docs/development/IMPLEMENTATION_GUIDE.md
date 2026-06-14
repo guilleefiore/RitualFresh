@@ -32,6 +32,7 @@ Este documento centraliza criterios técnicos para implementar RitualFresh de fo
 
 ```txt
 backend/src/main/java/com/ritualfresh/
+├── admin/
 ├── auth/
 ├── profiles/
 ├── contracts/
@@ -48,6 +49,29 @@ backend/src/main/java/com/ritualfresh/
 
 Cada módulo puede contener, como mínimo, `controller`, `service`, `repository`, `dto` y `model`.
 
+### Seguridad actual
+
+- La autenticación se resuelve con Spring Security.
+- El sistema no utiliza JWT ni `HttpSession`.
+- El frontend envía `Authorization: Bearer <sessionToken>`.
+- El `sessionToken` se persiste en `user_sessions` y se valida mediante un filtro de seguridad.
+- Las respuestas `401` y `403` se devuelven en JSON consistente con el resto de la API.
+
+Estructura transversal actual:
+
+```txt
+shared/
+├── config/
+│   ├── CorsConfig.java
+│   └── SecurityConfig.java
+├── exception/
+└── security/
+    ├── AuthenticatedUserPrincipal.java
+    ├── RestAccessDeniedHandler.java
+    ├── RestAuthenticationEntryPoint.java
+    └── SessionAuthenticationFilter.java
+```
+
 ## Reglas de implementación backend
 
 - No exponer entidades JPA directamente en controllers.
@@ -57,9 +81,28 @@ Cada módulo puede contener, como mínimo, `controller`, `service`, `repository`
 - Usar enums para estados de solicitud, contratación, pago, notificación y reclamo.
 - Mantener métodos pequeños y con responsabilidad clara.
 - Evitar lógica de negocio dentro de controllers.
+- Para endpoints protegidos, preferir autorización declarativa con `@PreAuthorize`.
 - No mezclar lógica de pagos con lógica de contratación fuera de servicios coordinadores.
 - Los webhooks deben ser idempotentes.
 - Las operaciones críticas deben registrar eventos o logs.
+
+### Reglas actuales de seguridad
+
+- Endpoints públicos:
+  - `POST /api/users/register`
+  - `POST /api/users/login`
+  - `GET /api/users/validation`
+  - `POST /api/users/password-reset`
+  - `POST /api/users/password-reset/confirm`
+- Endpoints administrativos:
+  - `/api/admin/**` requiere `ROLE_ADMIN`
+- Endpoints de perfil cliente:
+  - `/api/profiles/clientes/**` requiere `ROLE_CLIENT`
+- Endpoints de perfil trabajador:
+  - `/api/profiles/trabajadores/**` requiere `ROLE_WORKER`
+- Endpoints autenticados generales:
+  - `POST /api/users/logout`
+  - `GET /api/profiles/me`
 
 ## Frontend
 
@@ -129,5 +172,5 @@ frontend/src/
 - Endpoints documentados.
 - Errores controlados.
 - Validaciones claras.
-- Seguridad básica aplicada.
+- Seguridad centralizada aplicada.
 - Sin cambios innecesarios en módulos no relacionados.

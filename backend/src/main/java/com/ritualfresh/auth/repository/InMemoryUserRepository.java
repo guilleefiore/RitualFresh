@@ -2,8 +2,11 @@ package com.ritualfresh.auth.repository;
 
 import com.ritualfresh.auth.model.User;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,10 +17,15 @@ public class InMemoryUserRepository implements UserRepository {
 
     @Override
     public User save(User user) {
-        user.assignIdIfMissing(sequenceIds.getAndIncrement());
+        assignIdIfMissing(user, sequenceIds.getAndIncrement());
         usersByEmail.put(normalizeEmail(user.getEmail()), user);
         usersById.put(user.getId(), user);
         return user;
+    }
+
+    @Override
+    public List<User> findAll() {
+        return new ArrayList<>(usersById.values());
     }
 
     @Override
@@ -59,5 +67,19 @@ public class InMemoryUserRepository implements UserRepository {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    private void assignIdIfMissing(User user, long id) {
+        if (user.getId() != null) {
+            return;
+        }
+
+        try {
+            Field field = User.class.getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(user, id);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("No se pudo asignar el identificador en memoria.", exception);
+        }
     }
 }

@@ -4,6 +4,15 @@
 
 Gestiona registro, validación de cuenta, inicio de sesión, recuperación de contraseña, roles y acceso al sistema.
 
+Estado actual de implementación backend:
+
+- registro público para `CLIENT` y `WORKER`
+- validación de cuenta mediante token
+- login con `sessionToken`
+- logout
+- recuperación de contraseña
+- Spring Security con sesión opaca persistida en `user_sessions`
+
 Historias principales:
 
 - US01-M01-RF01: Registro de usuario.
@@ -14,6 +23,15 @@ Historias principales:
 ## M02 - Gestión de Perfiles
 
 Permite a clientes y trabajadores completar y administrar su información personal y profesional.
+
+Estado actual de implementación backend:
+
+- creación de perfil cliente
+- creación de perfil trabajador
+- consulta de perfil propio
+- edición de perfil cliente
+- edición de perfil trabajador
+- autorización por rol aplicada con Spring Security y seguridad declarativa
 
 Historias principales:
 
@@ -119,3 +137,14 @@ Historias principales:
 - US01-M11-RF01: Registrar reclamo o incidencia.
 - US02-M11-RF02: Gestión administrativa de reclamos.
 - US03-M11-RF03: Notificación de resolución de reclamo.
+
+## Soporte administrativo actual
+
+Aunque todavía no existe un módulo funcional completo de reclamos o moderación, el backend ya incorpora una base administrativa mínima:
+
+- listado de usuarios
+- detalle de usuario
+- cambio de estado de cuenta
+- métricas básicas agregadas
+
+Este soporte se expone bajo `/api/admin/**` y requiere rol `ADMIN`.

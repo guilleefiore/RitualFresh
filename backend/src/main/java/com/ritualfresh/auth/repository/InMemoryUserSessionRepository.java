@@ -2,6 +2,7 @@ package com.ritualfresh.auth.repository;
 
 import com.ritualfresh.auth.model.UserSession;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -13,7 +14,7 @@ public class InMemoryUserSessionRepository implements UserSessionRepository {
 
     @Override
     public UserSession save(UserSession session) {
-        session.assignIdIfMissing(sequenceIds.getAndIncrement());
+        assignIdIfMissing(session, sequenceIds.getAndIncrement());
         sessionsByToken.put(session.getToken(), session);
         return session;
     }
@@ -25,5 +26,19 @@ public class InMemoryUserSessionRepository implements UserSessionRepository {
         }
 
         return Optional.ofNullable(sessionsByToken.get(token.trim()));
+    }
+
+    private void assignIdIfMissing(UserSession session, long id) {
+        if (session.getId() != null) {
+            return;
+        }
+
+        try {
+            Field field = UserSession.class.getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(session, id);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("No se pudo asignar el identificador de la sesion en memoria.", exception);
+        }
     }
 }

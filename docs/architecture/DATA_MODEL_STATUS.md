@@ -2,8 +2,31 @@
 
 ## Estado actual
 
-El modelo de datos se encuentra pendiente de revisión antes de su implementación definitiva.
-La reorganización técnica actual separa el código por módulos `auth`, `profiles` y `shared`, pero no congela el diseño de entidades.
+El modelo de datos general se mantiene abierto para módulos posteriores, pero ya existe una base implementada y operativa para `auth`, `profiles` y soporte administrativo mínimo.
+
+Estado implementado actualmente:
+
+- `auth`
+  - `User`
+  - `UserSession`
+  - `UserRole`
+  - `AccountStatus`
+- `profiles`
+  - `ClientProfile`
+  - `WorkerProfile`
+  - `ProfileType`
+- `admin`
+  - no agrega tablas nuevas en esta primera etapa
+  - reutiliza `User` para listado, detalle, cambio de estado y métricas básicas
+
+Persistencia actual generada por JPA/Hibernate:
+
+- `users`
+- `user_sessions`
+- `client_profiles`
+- `worker_profiles`
+
+La autenticación del backend usa Spring Security con token opaco persistido en `user_sessions`. No se utiliza JWT.
 
 ## Criterio de trabajo
 
@@ -45,6 +68,8 @@ Estas entidades no constituyen un diseño definitivo. Funcionan únicamente como
 
 ## Pendiente
 
+- Revisar si `User` requiere mayor desacople entre creación de dominio, persistencia y seguridad.
+- Definir si la administración futura necesita entidades propias para auditoría, moderación o reclamos.
 - Revisar cardinalidades.
 - Definir atributos obligatorios.
 - Definir enums de estado.

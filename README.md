@@ -19,4 +19,12 @@ Plataforma web académica para la gestión de servicios domésticos de limpieza 
 
 ## Estado actual
 
-El proyecto está en etapa de reorganización técnica para iniciar la implementación incremental. El primer foco es M01, y el modelo de datos sigue sujeto a revisión antes de consolidarse.
+El proyecto ya cuenta con una base backend funcional para:
+
+- `M01`: gestión de usuarios, validación de cuenta, login, logout, recuperación de contraseña y sesiones opacas persistidas.
+- `M02`: creación, consulta y actualización de perfiles de cliente y trabajador.
+- administración mínima: listado de usuarios, detalle, cambio de estado y métricas básicas.
+
+La autenticación y autorización del backend se resuelven con Spring Security, manteniendo el modelo actual de `UserSession` y el uso de `Authorization: Bearer <sessionToken>`.
+
+El modelo de datos general sigue sujeto a revisión para módulos posteriores, pero las entidades actuales de `auth`, `profiles` y `admin` ya se encuentran implementadas y probadas.

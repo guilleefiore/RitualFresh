@@ -13,6 +13,7 @@ import com.ritualfresh.profiles.model.WorkerProfile;
 import com.ritualfresh.profiles.repository.ClientProfileRepository;
 import com.ritualfresh.profiles.repository.WorkerProfileRepository;
 import com.ritualfresh.shared.exception.BusinessRuleException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,10 +40,11 @@ public class ProfileService {
         this.workerProfileRepository = workerProfileRepository;
     }
 
+    @PreAuthorize("hasRole('CLIENT')")
     @Transactional
-    public UserProfileResult createClientProfile(String sessionToken, CreateClientProfileRequest request) {
+    public UserProfileResult createClientProfile(CreateClientProfileRequest request) {
         validateClientRequest(request);
-        User user = userService.getAuthenticatedUser(sessionToken);
+        User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.CLIENT, "El rol del usuario no permite crear un perfil de cliente.");
         validateUserWithoutProfile(user.getId());
 
@@ -62,10 +64,11 @@ public class ProfileService {
         return UserProfileResult.from(clientProfileRepository.save(profile));
     }
 
+    @PreAuthorize("hasRole('WORKER')")
     @Transactional
-    public UserProfileResult createWorkerProfile(String sessionToken, CreateWorkerProfileRequest request) {
+    public UserProfileResult createWorkerProfile(CreateWorkerProfileRequest request) {
         validateWorkerRequest(request);
-        User user = userService.getAuthenticatedUser(sessionToken);
+        User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.WORKER, "El rol del usuario no permite crear un perfil de trabajador.");
         validateUserWithoutProfile(user.getId());
 
@@ -82,9 +85,10 @@ public class ProfileService {
         return UserProfileResult.from(workerProfileRepository.save(profile));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Transactional(readOnly = true)
-    public UserProfileResult getMyProfile(String sessionToken) {
-        User user = userService.getAuthenticatedUser(sessionToken);
+    public UserProfileResult getMyProfile() {
+        User user = userService.getAuthenticatedUser();
 
         return clientProfileRepository.findByUserId(user.getId())
                 .map(UserProfileResult::from)
@@ -93,13 +97,14 @@ public class ProfileService {
                 .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil creado."));
     }
 
+    @PreAuthorize("hasRole('CLIENT')")
     @Transactional
-    public UserProfileResult updateClientProfile(String sessionToken, UpdateClientProfileRequest request) {
+    public UserProfileResult updateClientProfile(UpdateClientProfileRequest request) {
         if (request == null) {
             throw new BusinessRuleException("Debe completar los datos del perfil.");
         }
 
-        User user = userService.getAuthenticatedUser(sessionToken);
+        User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.CLIENT, "El rol del usuario no permite editar un perfil de cliente.");
 
         ClientProfile profile = clientProfileRepository.findByUserId(user.getId())
@@ -119,13 +124,14 @@ public class ProfileService {
         return UserProfileResult.from(clientProfileRepository.save(profile));
     }
 
+    @PreAuthorize("hasRole('WORKER')")
     @Transactional
-    public UserProfileResult updateWorkerProfile(String sessionToken, UpdateWorkerProfileRequest request) {
+    public UserProfileResult updateWorkerProfile(UpdateWorkerProfileRequest request) {
         if (request == null) {
             throw new BusinessRuleException("Debe completar los datos del perfil.");
         }
 
-        User user = userService.getAuthenticatedUser(sessionToken);
+        User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.WORKER, "El rol del usuario no permite editar un perfil de trabajador.");
 
         WorkerProfile profile = workerProfileRepository.findByUserId(user.getId())
