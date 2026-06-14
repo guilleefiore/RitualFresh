@@ -1,11 +1,17 @@
 package com.ritualfresh.profiles.controller;
 
-import com.ritualfresh.profiles.CreateClientProfileRequest;
-import com.ritualfresh.profiles.CreateWorkerProfileRequest;
-import com.ritualfresh.profiles.ProfileService;
-import com.ritualfresh.profiles.UpdateClientProfileRequest;
-import com.ritualfresh.profiles.UpdateWorkerProfileRequest;
-import com.ritualfresh.shared.BusinessRuleException;
+import com.ritualfresh.profiles.dto.CreateClientProfileApiRequest;
+import com.ritualfresh.profiles.dto.CreateClientProfileRequest;
+import com.ritualfresh.profiles.dto.CreateWorkerProfileApiRequest;
+import com.ritualfresh.profiles.dto.CreateWorkerProfileRequest;
+import com.ritualfresh.profiles.dto.ProfileApiResponse;
+import com.ritualfresh.profiles.dto.ProfileOperationApiResponse;
+import com.ritualfresh.profiles.dto.UpdateClientProfileApiRequest;
+import com.ritualfresh.profiles.dto.UpdateClientProfileRequest;
+import com.ritualfresh.profiles.dto.UpdateWorkerProfileApiRequest;
+import com.ritualfresh.profiles.dto.UpdateWorkerProfileRequest;
+import com.ritualfresh.profiles.service.ProfileService;
+import com.ritualfresh.shared.exception.BusinessRuleException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;

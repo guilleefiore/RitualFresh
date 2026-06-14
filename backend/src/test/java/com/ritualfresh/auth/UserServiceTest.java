@@ -1,6 +1,21 @@
 package com.ritualfresh.auth;
 
-import com.ritualfresh.shared.BusinessRuleException;
+import com.ritualfresh.auth.dto.ConfirmPasswordResetRequest;
+import com.ritualfresh.auth.dto.LoginRequest;
+import com.ritualfresh.auth.dto.LoginResult;
+import com.ritualfresh.auth.dto.PasswordResetRequest;
+import com.ritualfresh.auth.dto.PasswordResetResult;
+import com.ritualfresh.auth.dto.RegisterUserRequest;
+import com.ritualfresh.auth.dto.RegisterUserResult;
+import com.ritualfresh.auth.model.AccountStatus;
+import com.ritualfresh.auth.model.User;
+import com.ritualfresh.auth.model.UserRole;
+import com.ritualfresh.auth.repository.InMemoryUserRepository;
+import com.ritualfresh.auth.repository.InMemoryUserSessionRepository;
+import com.ritualfresh.auth.repository.UserRepository;
+import com.ritualfresh.auth.repository.UserSessionRepository;
+import com.ritualfresh.auth.service.UserService;
+import com.ritualfresh.shared.exception.BusinessRuleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

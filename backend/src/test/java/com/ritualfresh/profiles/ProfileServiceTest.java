@@ -1,16 +1,25 @@
 package com.ritualfresh.profiles;
 
-import com.ritualfresh.auth.InMemoryUserRepository;
-import com.ritualfresh.auth.InMemoryUserSessionRepository;
-import com.ritualfresh.auth.LoginResult;
-import com.ritualfresh.auth.RegisterUserRequest;
-import com.ritualfresh.auth.RegisterUserResult;
-import com.ritualfresh.auth.User;
-import com.ritualfresh.auth.UserRepository;
-import com.ritualfresh.auth.UserRole;
-import com.ritualfresh.auth.UserService;
-import com.ritualfresh.auth.UserSessionRepository;
-import com.ritualfresh.shared.BusinessRuleException;
+import com.ritualfresh.auth.repository.InMemoryUserRepository;
+import com.ritualfresh.auth.repository.InMemoryUserSessionRepository;
+import com.ritualfresh.auth.dto.LoginRequest;
+import com.ritualfresh.auth.dto.LoginResult;
+import com.ritualfresh.auth.dto.RegisterUserRequest;
+import com.ritualfresh.auth.dto.RegisterUserResult;
+import com.ritualfresh.auth.model.User;
+import com.ritualfresh.auth.repository.UserRepository;
+import com.ritualfresh.auth.model.UserRole;
+import com.ritualfresh.auth.service.UserService;
+import com.ritualfresh.auth.repository.UserSessionRepository;
+import com.ritualfresh.profiles.dto.CreateClientProfileRequest;
+import com.ritualfresh.profiles.dto.CreateWorkerProfileRequest;
+import com.ritualfresh.profiles.dto.UpdateWorkerProfileRequest;
+import com.ritualfresh.profiles.dto.UserProfileResult;
+import com.ritualfresh.profiles.model.ProfileType;
+import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
+import com.ritualfresh.profiles.repository.InMemoryWorkerProfileRepository;
+import com.ritualfresh.profiles.service.ProfileService;
+import com.ritualfresh.shared.exception.BusinessRuleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -192,12 +201,12 @@ class ProfileServiceTest {
 
     private LoginResult registerValidateAndLoginClient() {
         User user = registerAndValidateClient();
-        return userService.login(new com.ritualfresh.auth.LoginRequest(user.getEmail(), "clave123"));
+        return userService.login(new LoginRequest(user.getEmail(), "clave123"));
     }
 
     private LoginResult registerValidateAndLoginWorker() {
         User user = registerAndValidateWorker();
-        return userService.login(new com.ritualfresh.auth.LoginRequest(user.getEmail(), "clave123"));
+        return userService.login(new LoginRequest(user.getEmail(), "clave123"));
     }
 
     private User registerAndValidateClient() {
