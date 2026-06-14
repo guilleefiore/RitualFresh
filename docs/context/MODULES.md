@@ -2,13 +2,14 @@
 
 ## M01 - Gestión de Usuarios y Autenticación
 
-Gestiona registro, inicio de sesión, recuperación de contraseña, roles y acceso al sistema.
+Gestiona registro, validación de cuenta, inicio de sesión, recuperación de contraseña, roles y acceso al sistema.
 
 Historias principales:
 
 - US01-M01-RF01: Registro de usuario.
 - US02-M01-RF02: Inicio de sesión.
 - US03-M01-RF03: Recuperación de contraseña.
+- US04-M01-RF04: Validación de cuenta.
 
 ## M02 - Gestión de Perfiles
 
@@ -108,3 +109,13 @@ Permite seleccionar una ubicación en mapa y asociarla a perfil o contratación.
 Historia principal:
 
 - US01-M10-RF01: Seleccionar ubicación.
+
+## M11 - Reclamos e Incidencias
+
+Permite a usuarios registrar reclamos o incidencias asociados a una contratación, y al administrador gestionarlos, clasificarlos y resolverlos.
+
+Historias principales:
+
+- US01-M11-RF01: Registrar reclamo o incidencia.
+- US02-M11-RF02: Gestión administrativa de reclamos.
+- US03-M11-RF03: Notificación de resolución de reclamo.

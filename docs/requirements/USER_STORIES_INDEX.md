@@ -7,6 +7,7 @@ Este índice resume las historias de usuario definidas en el diseño del sistema
 | US01-M01-RF01 | Gestión de Usuarios y Autenticación | Registro de usuario |
 | US02-M01-RF02 | Gestión de Usuarios y Autenticación | Inicio de sesión |
 | US03-M01-RF03 | Gestión de Usuarios y Autenticación | Recuperación de contraseña |
+| US04-M01-RF04 | Gestión de Usuarios y Autenticación | Validación de cuenta |
 | US01-M02-RF01 | Gestión de Perfiles | Perfil del trabajador |
 | US02-M02-RF02 | Gestión de Perfiles | Perfil del cliente |
 | US01-M03-RF01 | Búsqueda y Selección | Búsqueda por trabajador o servicio |
@@ -43,3 +44,6 @@ Este índice resume las historias de usuario definidas en el diseño del sistema
 | US09-M09-RF09 | Pagos | Limpieza progresiva mensual de strikes |
 | US10-M09-RF10 | Pagos | Liquidación automática de fondos al trabajador |
 | US01-M10-RF01 | Geolocalización | Seleccionar ubicación |
+| US01-M11-RF01 | Reclamos e Incidencias | Registrar reclamo o incidencia |
+| US02-M11-RF02 | Reclamos e Incidencias | Gestión administrativa de reclamos |
+| US03-M11-RF03 | Reclamos e Incidencias | Notificación de resolución de reclamo |
