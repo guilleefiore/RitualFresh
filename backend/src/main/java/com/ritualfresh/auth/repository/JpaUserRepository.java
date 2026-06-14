@@ -3,6 +3,7 @@ package com.ritualfresh.auth.repository;
 import com.ritualfresh.auth.model.User;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,6 +17,11 @@ public class JpaUserRepository implements UserRepository {
     @Override
     public User save(User user) {
         return userJpaRepository.save(user);
+    }
+
+    @Override
+    public List<User> findAll() {
+        return userJpaRepository.findAll();
     }
 
     @Override

@@ -30,6 +30,7 @@ Validan interacción entre componentes.
 Casos mínimos:
 
 - Registro + login.
+- Login + acceso autenticado con `sessionToken`.
 - Perfil + búsqueda.
 - Búsqueda + solicitud.
 - Solicitud + aceptación + pago.
@@ -62,6 +63,10 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
    - Verifica acceso autenticado con `Authorization: Bearer <sessionToken>`.
 5. `POST /api/profiles/clientes` o `POST /api/profiles/trabajadores`
    - Verifica persistencia real del perfil asociado al usuario autenticado.
+6. `POST /api/users/logout`
+   - Verifica cierre de sesión y rechazo posterior del mismo token.
+7. `GET /api/admin/users`
+   - Verifica acceso sólo con usuario `ADMIN`.
 
 Configuración mínima sugerida:
 
@@ -84,10 +89,34 @@ Si se documenta evidencia manual, conviene registrar:
 Casos mínimos:
 
 - Acceso a endpoint privado sin autenticación.
+- Acceso con token inválido.
+- Acceso con token expirado.
+- Acceso con sesión cerrada.
 - Acceso con rol incorrecto.
+- `CLIENT` no accede a endpoints de `WORKER`.
+- `WORKER` no accede a endpoints de `CLIENT`.
+- `CLIENT` y `WORKER` no acceden a `/api/admin/**`.
+- `ADMIN` sí accede a endpoints administrativos.
 - Intento de modificar información de otro usuario.
-- Validación de token inválido o expirado.
 - Protección de datos financieros sensibles.
+
+Cobertura actual implementada en backend:
+
+- `SecurityIntegrationTest`
+  - acceso privado sin token
+  - token inválido
+  - token expirado
+  - token cerrado
+  - `CLIENT` contra endpoints `WORKER`
+  - `WORKER` contra endpoints `CLIENT`
+  - `CLIENT` y `WORKER` contra `/api/admin/**`
+  - `ADMIN` contra `/api/admin/**`
+- `UserServiceTest`
+  - registro, validación, login y recuperación de contraseña
+- `ProfileServiceTest`
+  - reglas de negocio y restricciones funcionales de perfiles
+- `AdminServiceTest`
+  - métricas, cambio de estado y restricciones administrativas
 
 ### Pruebas frontend
 

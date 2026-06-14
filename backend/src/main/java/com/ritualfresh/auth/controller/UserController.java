@@ -20,13 +20,12 @@ import com.ritualfresh.auth.dto.RegisterUserRole;
 import com.ritualfresh.auth.dto.UserApiResponse;
 import com.ritualfresh.auth.model.User;
 import com.ritualfresh.auth.service.UserService;
-import com.ritualfresh.shared.exception.BusinessRuleException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -104,17 +103,17 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public MessageApiResponse closeSession(@RequestHeader("Authorization") String authorization) {
-        userService.closeSession(extractSessionToken(authorization));
+    public MessageApiResponse closeSession(Authentication authentication) {
+        userService.closeSession(extractSessionToken(authentication));
 
         return new MessageApiResponse("Session cerrada correctamente.");
     }
 
-    private String extractSessionToken(String authorization) {
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
-            throw new BusinessRuleException("Debe iniciar sesion para acceder a esta funcionalidad.");
+    private String extractSessionToken(Authentication authentication) {
+        if (authentication == null || authentication.getCredentials() == null) {
+            return userService.getAuthenticatedSessionToken();
         }
 
-        return authorization.substring("Bearer ".length()).trim();
+        return authentication.getCredentials().toString();
     }
 }

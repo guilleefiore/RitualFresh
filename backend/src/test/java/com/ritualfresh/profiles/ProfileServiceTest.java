@@ -20,10 +20,15 @@ import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
 import com.ritualfresh.profiles.repository.InMemoryWorkerProfileRepository;
 import com.ritualfresh.profiles.service.ProfileService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
+import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,6 +39,7 @@ class ProfileServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.clearContext();
         UserRepository userRepository = new InMemoryUserRepository();
         UserSessionRepository userSessionRepository = new InMemoryUserSessionRepository();
         userService = new UserService(userRepository, userSessionRepository);
@@ -46,10 +52,9 @@ class ProfileServiceTest {
     @Test
     void us02M02Rf02CreatesClientProfileWithValidData() {
         LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
 
-        UserProfileResult result = profileService.createClientProfile(
-                session.sessionToken(),
-                validClientRequest());
+        UserProfileResult result = profileService.createClientProfile(validClientRequest());
 
         assertEquals(ProfileType.CLIENT, result.profileType());
         assertEquals(session.user().getId(), result.userId());
@@ -63,6 +68,7 @@ class ProfileServiceTest {
     @Test
     void us02M02Rf02PreventsClientPhoneWithInvalidFormat() {
         LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
         CreateClientProfileRequest request = new CreateClientProfileRequest(
                 null,
                 "abc",
@@ -75,9 +81,7 @@ class ProfileServiceTest {
                 "Mendoza",
                 "Limpieza semanal");
 
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
-                session.sessionToken(),
-                request));
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(request));
 
         assertEquals("El telefono de contacto no posee un formato valido.", exception.getMessage());
     }
@@ -85,6 +89,7 @@ class ProfileServiceTest {
     @Test
     void us02M02Rf02PreventsClientAddressWithInvalidFormat() {
         LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
         CreateClientProfileRequest request = new CreateClientProfileRequest(
                 null,
                 "2615555555",
@@ -97,9 +102,7 @@ class ProfileServiceTest {
                 "Mendoza",
                 "Limpieza semanal");
 
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
-                session.sessionToken(),
-                request));
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(request));
 
         assertEquals("La direccion ingresada no posee un formato valido.", exception.getMessage());
     }
@@ -107,21 +110,18 @@ class ProfileServiceTest {
     @Test
     void us01M02Rf01CreatesEditsAndGetsWorkerProfileWithValidData() {
         LoginResult session = registerValidateAndLoginWorker();
-        profileService.createWorkerProfile(
-                session.sessionToken(),
-                validWorkerRequest());
+        authenticate(session);
+        profileService.createWorkerProfile(validWorkerRequest());
 
-        UserProfileResult updated = profileService.updateWorkerProfile(
-                session.sessionToken(),
-                new UpdateWorkerProfileRequest(
-                        "https://cdn.example.com/trabajador.png",
-                        "Limpieza general, profunda y mantenimiento preventivo",
-                        4,
-                        "Limpieza general, limpieza profunda, mantenimiento",
-                        "Gran Mendoza",
-                        "Lunes a viernes de 9 a 17",
-                        new BigDecimal("4500.00")));
-        UserProfileResult obtained = profileService.getMyProfile(session.sessionToken());
+        UserProfileResult updated = profileService.updateWorkerProfile(new UpdateWorkerProfileRequest(
+                "https://cdn.example.com/trabajador.png",
+                "Limpieza general, profunda y mantenimiento preventivo",
+                4,
+                "Limpieza general, limpieza profunda, mantenimiento",
+                "Gran Mendoza",
+                "Lunes a viernes de 9 a 17",
+                new BigDecimal("4500.00")));
+        UserProfileResult obtained = profileService.getMyProfile();
 
         assertEquals(ProfileType.WORKER, updated.profileType());
         assertEquals("Limpieza general, profunda y mantenimiento preventivo", obtained.description());
@@ -134,9 +134,9 @@ class ProfileServiceTest {
     @Test
     void us01M02Rf01PreventsNegativeExperienceYears() {
         LoginResult session = registerValidateAndLoginWorker();
+        authenticate(session);
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createWorkerProfile(
-                session.sessionToken(),
                 new CreateWorkerProfileRequest(
                         null,
                         "Limpieza profunda",
@@ -152,9 +152,9 @@ class ProfileServiceTest {
     @Test
     void us01M02Rf01PreventsNonPositiveHourlyRate() {
         LoginResult session = registerValidateAndLoginWorker();
+        authenticate(session);
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createWorkerProfile(
-                session.sessionToken(),
                 new CreateWorkerProfileRequest(
                         null,
                         "Limpieza profunda",
@@ -170,10 +170,9 @@ class ProfileServiceTest {
     @Test
     void preventsCreatingClientProfileForWorkerUser() {
         LoginResult session = registerValidateAndLoginWorker();
+        authenticate(session);
 
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
-                session.sessionToken(),
-                validClientRequest()));
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(validClientRequest()));
 
         assertEquals("El rol del usuario no permite crear un perfil de cliente.", exception.getMessage());
     }
@@ -181,20 +180,18 @@ class ProfileServiceTest {
     @Test
     void preventsCreatingMoreThanOneProfilePerUser() {
         LoginResult session = registerValidateAndLoginClient();
-        profileService.createClientProfile(session.sessionToken(), validClientRequest());
+        authenticate(session);
+        profileService.createClientProfile(validClientRequest());
 
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
-                session.sessionToken(),
-                validClientRequest()));
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(validClientRequest()));
 
         assertEquals("El usuario ya posee un perfil creado.", exception.getMessage());
     }
 
     @Test
     void preventsManagingProfileWithoutSession() {
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(
-                "token-inexistente",
-                validClientRequest()));
+        SecurityContextHolder.clearContext();
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(validClientRequest()));
 
         assertEquals("Debe iniciar sesion para acceder a esta funcionalidad.", exception.getMessage());
     }
@@ -260,5 +257,13 @@ class ProfileServiceTest {
                 "Godoy Cruz y Ciudad de Mendoza",
                 "Lunes a viernes de 8 a 16",
                 new BigDecimal("4000.00"));
+    }
+
+    private void authenticate(LoginResult session) {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                AuthenticatedUserPrincipal.from(session.user()),
+                session.sessionToken(),
+                List.of(new SimpleGrantedAuthority("ROLE_" + session.user().getRole().name())));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

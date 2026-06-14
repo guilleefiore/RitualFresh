@@ -11,6 +11,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -18,6 +21,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "user_sessions",
         uniqueConstraints = @UniqueConstraint(name = "uk_user_sessions_token", columnNames = "token"))
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,9 +43,6 @@ public class UserSession {
 
     private LocalDateTime closedAt;
 
-    protected UserSession() {
-    }
-
     public UserSession(User user, String token, LocalDateTime createdAt, LocalDateTime expiresAt) {
         this.user = user;
         this.token = token;
@@ -48,40 +50,12 @@ public class UserSession {
         this.expiresAt = expiresAt;
     }
 
-    public void assignIdIfMissing(long id) {
-        if (this.id == null) {
-            this.id = id;
-        }
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getExpiresAt() {
-        return expiresAt;
-    }
-
-    public LocalDateTime getClosedAt() {
-        return closedAt;
-    }
-
+    // Indica si la sesion sigue vigente y no fue cerrada.
     public boolean isActive(LocalDateTime now) {
         return closedAt == null && expiresAt.isAfter(now);
     }
 
+    // Marca la sesion como cerrada.
     public void close(LocalDateTime closedAt) {
         this.closedAt = closedAt;
     }

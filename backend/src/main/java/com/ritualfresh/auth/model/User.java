@@ -9,6 +9,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -16,6 +19,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "users",
         uniqueConstraints = @UniqueConstraint(name = "uk_users_email", columnNames = "email"))
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,10 +65,23 @@ public class User {
 
     private LocalDateTime passwordResetTokenExpiresAt;
 
-    protected User() {
+    public static User register(RegistrationData data) {
+        User user = new User();
+        user.firstName = data.firstName();
+        user.lastName = data.lastName();
+        user.documentNumber = data.documentNumber();
+        user.phoneNumber = data.phoneNumber();
+        user.email = data.email();
+        user.passwordHash = data.passwordHash();
+        user.role = data.role();
+        user.accountStatus = AccountStatus.PENDING_VALIDATION;
+        user.createdAt = data.createdAt();
+        user.accountValidationToken = data.accountValidationToken();
+        return user;
     }
 
-    public User(
+    // Datos agrupados para registrar un usuario nuevo sin pasar muchos parámetros sueltos.
+    public record RegistrationData(
             String firstName,
             String lastName,
             String documentNumber,
@@ -71,90 +89,21 @@ public class User {
             String email,
             String passwordHash,
             UserRole role,
+            LocalDateTime createdAt,
             String accountValidationToken) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.documentNumber = documentNumber;
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.passwordHash = passwordHash;
-        this.role = role;
-        this.accountStatus = AccountStatus.PENDING_VALIDATION;
-        this.createdAt = LocalDateTime.now();
-        this.accountValidationToken = accountValidationToken;
     }
 
-    public void assignIdIfMissing(long id) {
-        if (this.id == null) {
-            this.id = id;
-        }
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public String getDocumentNumber() {
-        return documentNumber;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
-
-    public AccountStatus getAccountStatus() {
-        return accountStatus;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getDeactivatedAt() {
-        return deactivatedAt;
-    }
-
-    public String getAccountValidationToken() {
-        return accountValidationToken;
-    }
-
-    public String getPasswordResetToken() {
-        return passwordResetToken;
-    }
-
-    public LocalDateTime getPasswordResetTokenExpiresAt() {
-        return passwordResetTokenExpiresAt;
-    }
-
+    // Indica si la cuenta ya quedó habilitada para operar.
     public boolean isActive() {
         return accountStatus == AccountStatus.ACTIVE;
     }
 
+    // Confirma la cuenta y limpia el token de validación.
     public void validateAccount() {
-        this.accountStatus = AccountStatus.ACTIVE;
-        this.accountValidationToken = null;
+        changeAccountStatus(AccountStatus.ACTIVE);
     }
 
+    // Actualiza los datos básicos editables del usuario.
     public void editData(String firstName, String lastName, String documentNumber, String phoneNumber) {
         this.firstName = firstName;
         this.lastName = lastName;
@@ -162,25 +111,37 @@ public class User {
         this.phoneNumber = phoneNumber;
     }
 
+    // Reemplaza el hash de contraseña y limpia el token de reseteo.
     public void changePassword(String passwordHash) {
         this.passwordHash = passwordHash;
         this.passwordResetToken = null;
         this.passwordResetTokenExpiresAt = null;
     }
 
+    // Inicia la ventana de recuperación de contraseña.
     public void startPasswordReset(String passwordResetToken, LocalDateTime expiresAt) {
         this.passwordResetToken = passwordResetToken;
         this.passwordResetTokenExpiresAt = expiresAt;
     }
 
+    // Verifica si el token de recuperación sigue vigente.
     public boolean hasValidPasswordResetToken(LocalDateTime now) {
         return passwordResetToken != null
                 && passwordResetTokenExpiresAt != null
                 && passwordResetTokenExpiresAt.isAfter(now);
     }
 
+    // Cambia el estado administrativo de la cuenta y limpia tokens sensibles.
+    public void changeAccountStatus(AccountStatus accountStatus) {
+        this.accountStatus = accountStatus;
+        this.deactivatedAt = accountStatus == AccountStatus.ACTIVE ? null : LocalDateTime.now();
+        this.accountValidationToken = null;
+        this.passwordResetToken = null;
+        this.passwordResetTokenExpiresAt = null;
+    }
+
+    // Marca la cuenta como eliminada y registra el momento.
     public void deactivate() {
-        this.accountStatus = AccountStatus.DELETED;
-        this.deactivatedAt = LocalDateTime.now();
+        changeAccountStatus(AccountStatus.DELETED);
     }
 }

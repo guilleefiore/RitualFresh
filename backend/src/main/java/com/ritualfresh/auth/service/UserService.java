@@ -14,7 +14,10 @@ import com.ritualfresh.auth.model.UserSession;
 import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.security.PasswordSecurity;
+import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
 import com.ritualfresh.shared.exception.BusinessRuleException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,7 +45,7 @@ public class UserService {
 
         String normalizedEmail = normalizeEmail(request.email());
         String accountValidationToken = UUID.randomUUID().toString();
-        User user = new User(
+        User user = User.register(new User.RegistrationData(
                 request.firstName().trim(),
                 request.lastName().trim(),
                 request.documentNumber().trim(),
@@ -50,7 +53,8 @@ public class UserService {
                 normalizedEmail,
                 PasswordSecurity.generateHash(request.password()),
                 request.role(),
-                accountValidationToken);
+                LocalDateTime.now(),
+                accountValidationToken));
 
         userRepository.save(user);
 
@@ -121,6 +125,28 @@ public class UserService {
                 .orElseThrow(() -> new BusinessRuleException("La sesion indicada no existe."));
         session.close(LocalDateTime.now());
         userSessionRepository.save(session);
+    }
+
+    @Transactional(readOnly = true)
+    public User getAuthenticatedUser() {
+        AuthenticatedUserPrincipal principal = getCurrentPrincipal();
+        User user = userRepository.findById(principal.getUserId())
+                .orElseThrow(() -> new BusinessRuleException("Debe iniciar sesion para acceder a esta funcionalidad."));
+
+        if (!user.isActive()) {
+            throw new BusinessRuleException("La cuenta no se encuentra activa.");
+        }
+
+        return user;
+    }
+
+    public String getAuthenticatedSessionToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getCredentials() == null) {
+            throw new BusinessRuleException("Debe iniciar sesion para acceder a esta funcionalidad.");
+        }
+
+        return authentication.getCredentials().toString();
     }
 
     @Transactional
@@ -239,5 +265,14 @@ public class UserService {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    private AuthenticatedUserPrincipal getCurrentPrincipal() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUserPrincipal principal)) {
+            throw new BusinessRuleException("Debe iniciar sesion para acceder a esta funcionalidad.");
+        }
+
+        return principal;
     }
 }
