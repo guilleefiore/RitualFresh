@@ -28,26 +28,16 @@ Este documento centraliza criterios técnicos para implementar RitualFresh de fo
 - SpringDoc OpenAPI.
 - JUnit 5.
 
-### Estructura sugerida
+### Estructura
 
 ```txt
 backend/src/main/java/com/ritualfresh/
 ├── auth/
-│   ├── controller/
-│   ├── service/
-│   ├── repository/
-│   ├── dto/
-│   └── model/
 ├── profiles/
-│   ├── controller/
-│   ├── service/
-│   ├── repository/
-│   ├── dto/
-│   └── model/
 ├── contracts/
 ├── payments/
+├── ratings/
 ├── notifications/
-├── reviews/
 ├── chat/
 ├── geolocation/
 └── shared/

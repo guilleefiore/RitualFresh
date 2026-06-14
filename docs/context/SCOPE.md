@@ -47,6 +47,7 @@ No forman parte del alcance inicial:
 - Expansión a categorías no vinculadas con limpieza y mantenimiento del hogar.
 - Sistema avanzado de capacitación de trabajadores.
 - Sistema financiero propio o créditos internos.
+- Gestión de empresas prestadoras de servicios (el sistema se centra en trabajadores independientes).
 
 ## Criterio de priorización
 
