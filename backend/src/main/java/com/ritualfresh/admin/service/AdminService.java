@@ -10,6 +10,7 @@ import com.ritualfresh.auth.model.UserRole;
 import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +19,10 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class AdminService {
     private final UserService userService;
     private final UserRepository userRepository;
-
-    public AdminService(UserService userService, UserRepository userRepository) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)

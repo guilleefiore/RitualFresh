@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Auditoria backend M01 y M02 de RitualFresh</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.45;
+      margin: 32px;
+      color: #111;
+    }
+    h1, h2, h3 {
+      color: #1f3a5f;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px 0;
+      font-size: 11pt;
+    }
+    th, td {
+      border: 1px solid #bfc7d1;
+      padding: 8px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: #e9eef5;
+    }
+    .note {
+      background: #f6f8fb;
+      border-left: 4px solid #6c8db5;
+      padding: 10px 12px;
+      margin: 12px 0;
+    }
+    ul {
+      margin-top: 6px;
+    }
+    code {
+      font-family: Menlo, Consolas, monospace;
+      font-size: 10pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>Auditoria backend M01 y M02 de RitualFresh</h1>
+
+  <h2>1. Introduccion</h2>
+  <p>Este documento resume el estado actual del backend de RitualFresh con foco en <strong>M01</strong> (Gestion de Usuarios y Autenticacion) y <strong>M02</strong> (Gestion de Perfiles). Tambien deja marcado el avance real de la revision manual hecha hasta ahora para que la lectura de clases pueda continuar de forma ordenada.</p>
+
+  <div class="note">
+    <strong>Avance actual de revision manual:</strong> ya fueron revisados <code>auth/model</code>, <code>auth/repository</code> y <code>auth/service</code>. Todavia quedan pendientes <code>auth/controller</code>, <code>auth/dto</code>, <code>auth/security</code> y luego el modulo <code>profiles</code>.
+  </div>
+
+  <h2>2. Estructura general del backend</h2>
+  <p>Estructura actual resumida:</p>
+  <pre>com.ritualfresh
+├── RitualFreshApplication.java
+├── admin
+├── auth
+│   ├── controller
+│   ├── dto
+│   ├── model
+│   ├── repository
+│   ├── security
+│   └── service
+├── notifications
+│   ├── config
+│   └── service
+├── profiles
+│   ├── controller
+│   ├── dto
+│   ├── model
+│   ├── repository
+│   └── service
+└── shared
+    ├── config
+    ├── exception
+    └── security</pre>
+
+  <p>Observaciones de estructura:</p>
+  <ul>
+    <li><code>auth</code> y <code>profiles</code> siguen separados por responsabilidad y con capas internas claras.</li>
+    <li>Se agrego <code>notifications</code> para sacar del modulo <code>auth</code> la infraestructura concreta de envio de correos.</li>
+    <li><code>shared</code> concentra configuracion y seguridad transversal sin mezclarse con reglas de negocio.</li>
+    <li>La estructura actual sigue siendo coherente para una base modular de backend academico.</li>
+  </ul>
+
+  <h2>3. Orden recomendado de revision</h2>
+  <ul>
+    <li>Entidades de dominio (<code>model</code>).</li>
+    <li>Enums de dominio.</li>
+    <li>Repositories y adaptadores JPA o in-memory.</li>
+    <li>Services y reglas de negocio.</li>
+    <li>Controllers.</li>
+    <li>DTOs.</li>
+    <li>Excepciones, seguridad y validaciones.</li>
+    <li>Tests.</li>
+  </ul>
+
+  <p>Que observar en cada paso:</p>
+  <ul>
+    <li>En <code>model</code>: estado inicial, relaciones, campos sensibles y helpers usados por persistencia in-memory.</li>
+    <li>En <code>repository</code>: consistencia entre contratos, JPA e implementaciones en memoria.</li>
+    <li>En <code>service</code>: reglas de negocio, validaciones, expiraciones, estados y separacion de responsabilidades.</li>
+    <li>En <code>controller</code>: traduccion request/response y ausencia de logica de negocio duplicada.</li>
+    <li>En <code>dto</code>: separacion entre contrato HTTP y objetos internos.</li>
+    <li>En <code>tests</code>: trazabilidad minima entre historia, caso feliz y errores importantes.</li>
+  </ul>
+
+  <h2>4. Estado de revision actual</h2>
+  <table>
+    <tr>
+      <th>Paquete</th>
+      <th>Estado</th>
+      <th>Observacion</th>
+    </tr>
+    <tr>
+      <td><code>auth/model</code></td>
+      <td>Revisado</td>
+      <td>Se revisaron <code>User</code>, <code>UserSession</code>, <code>UserRole</code> y <code>AccountStatus</code>.</td>
+    </tr>
+    <tr>
+      <td><code>auth/repository</code></td>
+      <td>Revisado</td>
+      <td>Se revisaron contratos, adaptadores JPA y versiones in-memory.</td>
+    </tr>
+    <tr>
+      <td><code>auth/service</code></td>
+      <td>Revisado</td>
+      <td>Se reviso principalmente <code>UserService</code> y su flujo completo de autenticacion.</td>
+    </tr>
+    <tr>
+      <td><code>auth/security</code></td>
+      <td>Pendiente parcial</td>
+      <td><code>PasswordSecurity</code> ya fue leida y comentada, pero no se marco aun como pasada completa del paquete.</td>
+    </tr>
+    <tr>
+      <td><code>auth/controller</code> y <code>auth/dto</code></td>
+      <td>Pendiente</td>
+      <td>Conviene revisarlos despues de terminar el nucleo de negocio de M01.</td>
+    </tr>
+    <tr>
+      <td><code>profiles/*</code></td>
+      <td>Pendiente</td>
+      <td>Queda para la siguiente etapa de auditoria.</td>
+    </tr>
+  </table>
+
+  <h2>5. Analisis del M01: Gestion de Usuarios y Autenticacion</h2>
+  <table>
+    <tr>
+      <th>Clase o grupo</th>
+      <th>Ruta</th>
+      <th>Responsabilidad</th>
+      <th>Que revisar manualmente</th>
+      <th>Estado actual</th>
+    </tr>
+    <tr>
+      <td><code>User</code></td>
+      <td><code>backend/src/main/java/com/ritualfresh/auth/model/User.java</code></td>
+      <td>Entidad principal de cuenta, rol, estado, hash y tokens.</td>
+      <td>Campos sensibles, estado inicial, limpieza de tokens, helper <code>assignIdIfMissing</code>.</td>
+      <td>Revisado</td>
+    </tr>
+    <tr>
+      <td><code>UserSession</code></td>
+      <td><code>backend/src/main/java/com/ritualfresh/auth/model/UserSession.java</code></td>
+      <td>Entidad de sesion autenticada con expiracion y cierre.</td>
+      <td>Token, vigencia, metodo <code>isActive</code>, helper in-memory.</td>
+      <td>Revisado</td>
+    </tr>
+    <tr>
+      <td><code>UserRole</code> y <code>AccountStatus</code></td>
+      <td><code>backend/src/main/java/com/ritualfresh/auth/model/</code></td>
+      <td>Enums del dominio de autenticacion.</td>
+      <td>Valores expuestos, estados realmente usados y presencia de <code>ADMIN</code>.</td>
+      <td>Revisado</td>
+    </tr>
+    <tr>
+      <td><code>UserRepository</code> y <code>UserSessionRepository</code></td>
+      <td><code>backend/src/main/java/com/ritualfresh/auth/repository/</code></td>
+      <td>Puertos de persistencia de usuarios y sesiones.</td>
+      <td>Consistencia de contratos y metodos de busqueda.</td>
+      <td>Revisado</td>
+    </tr>
+    <tr>
+      <td><code>JpaUserRepository</code>, <code>UserJpaRepository</code>, <code>JpaUserSessionRepository</code>, <code>UserSessionJpaRepository</code></td>
+      <td><code>backend/src/main/java/com/ritualfresh/auth/repository/</code></td>
+      <td>Adaptadores concretos con Spring Data JPA.</td>
+      <td>Rol de adapter, normalizacion de email, validaciones previas a consultar.</td>
+      <td>Revisado</td>
+    </tr>
+    <tr>
+      <td><code>InMemoryUserRepository</code> y <code>InMemoryUserSessionRepository</code></td>
+      <td><code>backend/src/main/java/com/ritualfresh/auth/repository/</code></td>
+      <td>Persistencia en memoria para tests.</td>
+      <td>Simulacion de ids, indices por email y token, paridad con JPA.</td>
+      <td>Revisado</td>
+    </tr>
+    <tr>
+      <td><code>UserService</code></td>
+      <td><code>backend/src/main/java/com/ritualfresh/auth/service/UserService.java</code></td>
+      <td>Orquesta registro, validacion, login, logout y recuperacion.</td>
+      <td>Reglas de negocio, expiraciones, estados y coordinacion con correo.</td>
+      <td>Revisado</td>
+    </tr>
+  </table>
+
+  <h3>Hallazgos y observaciones del M01</h3>
+  <ul>
+    <li>El modulo esta funcionalmente consistente y con trazabilidad clara entre entidad, repositorio y servicio.</li>
+    <li><code>UserRole</code> contiene <code>ADMIN</code>, pero el alta publica sigue limitada mediante <code>RegisterUserRole</code> a <code>CLIENT</code> y <code>WORKER</code>.</li>
+    <li>Los tokens de validacion y recuperacion siguen estando en <code>User</code>, lo cual simplifica M01 pero concentra varias responsabilidades en la entidad.</li>
+    <li>Los repositorios in-memory quedaron justificados para tests y ya no usan reflexion para setear ids.</li>
+    <li><code>UserService</code> es claramente el corazon funcional de M01 y conviene seguir auditandolo con prioridad cuando cambie el flujo.</li>
+  </ul>
+
+  <h2>6. Cambio relevante: correos reales de prueba con Mailtrap</h2>
+  <p>Durante esta etapa se completo la integracion de prueba de correos para M01 usando Mailtrap y variables de entorno con Docker Compose.</p>
+
+  <p>Clases e infraestructura agregadas o actualizadas:</p>
+  <ul>
+    <li><code>backend/src/main/java/com/ritualfresh/notifications/service/AccountEmailService.java</code></li>
+    <li><code>backend/src/main/java/com/ritualfresh/notifications/service/SmtpAccountEmailService.java</code></li>
+    <li><code>backend/src/main/java/com/ritualfresh/notifications/service/LoggingAccountEmailService.java</code></li>
+    <li><code>backend/src/main/java/com/ritualfresh/notifications/config/MailProperties.java</code></li>
+    <li><code>backend/src/main/java/com/ritualfresh/shared/config/MailConfig.java</code></li>
+    <li><code>backend/src/main/resources/application.properties</code></li>
+    <li><code>docker-compose.yml</code>, <code>.env</code> y <code>.env.example</code></li>
+  </ul>
+
+  <p>Impacto funcional:</p>
+  <ul>
+    <li>El token de validacion ya no se expone por la API publica de registro.</li>
+    <li>Cuando el token de validacion vence, se puede solicitar un reenvio publico con <code>POST /api/users/validation/resend</code>.</li>
+    <li>El token de recuperacion ya no se expone por la API publica de password reset.</li>
+    <li>La validacion manual ahora se apoya en Mailtrap como bandeja de prueba.</li>
+    <li>La autenticacion ya puede viajar por cookie <code>HttpOnly</code> y el backend mantiene Bearer como compatibilidad tecnica.</li>
+  </ul>
+
+  <h2>7. Flujo manual de M01 ya validado</h2>
+  <p>El flujo completo de M01 ya fue probado manualmente y quedo funcionando:</p>
+  <ol>
+    <li>Registro de usuario por <code>POST /api/users/register</code>.</li>
+    <li>Recepcion del correo <em>RitualFresh - Validacion de cuenta</em> en Mailtrap.</li>
+    <li>Reenvio publico del enlace de validacion con <code>POST /api/users/validation/resend</code> si el primero vence.</li>
+    <li>Recepcion del correo reenviado en Mailtrap y validacion de cuenta por link <code>GET /api/users/validation?token=...</code>.</li>
+    <li>Login exitoso con <code>POST /api/users/login</code>.</li>
+    <li>Solicitud de recuperacion con <code>POST /api/users/password-reset</code>.</li>
+    <li>Recepcion del correo <em>RitualFresh - Recuperacion de contrasena</em> en Mailtrap.</li>
+    <li>Cambio de contrasena con <code>POST /api/users/password-reset/confirm</code>.</li>
+    <li>Login exitoso con la contrasena nueva.</li>
+    <li>Fallo esperado al intentar login con la contrasena vieja.</li>
+    <li>Autoeliminacion logica del usuario autenticado con <code>DELETE /api/users/me</code>.</li>
+    <li>Expiracion de la cookie de sesion al eliminar la cuenta.</li>
+    <li>Fallo esperado al intentar login despues de la autoeliminacion.</li>
+  </ol>
+
+  <div class="note">
+    <strong>Conclusion funcional puntual:</strong> el ciclo completo de registro, validacion por correo, login, recuperacion, cambio efectivo de contrasena y autoeliminacion logica de la cuenta ya quedo validado de punta a punta para M01.
+  </div>
+
+  <h2>8. Nueva capacidad agregada: autoeliminacion de cuenta</h2>
+  <p>Se agrego el endpoint <code>DELETE /api/users/me</code> para que un <code>CLIENT</code> o <code>WORKER</code> autenticado pueda eliminar logicamente su propia cuenta sin depender de un administrador.</p>
+
+  <p>Comportamiento implementado:</p>
+  <ul>
+    <li>La cuenta cambia a estado <code>DELETED</code>.</li>
+    <li>Se registra <code>deactivatedAt</code>.</li>
+    <li>Se cierra la sesion actual.</li>
+    <li>La respuesta expira la cookie de sesion actual.</li>
+    <li>La cuenta ya no puede iniciar sesion nuevamente.</li>
+    <li>No hay borrado fisico de la fila de usuario; se mantiene trazabilidad.</li>
+  </ul>
+
+  <h2>9. Tests relevantes</h2>
+  <table>
+    <tr>
+      <th>Test</th>
+      <th>Ruta</th>
+      <th>Cobertura</th>
+      <th>Observacion</th>
+    </tr>
+    <tr>
+      <td><code>UserServiceTest</code></td>
+      <td><code>backend/src/test/java/com/ritualfresh/auth/UserServiceTest.java</code></td>
+      <td>Registro, validacion, reenvio de validacion, login, recuperacion, autoeliminacion y errores.</td>
+      <td>Sigue siendo la referencia principal de M01 a nivel de negocio.</td>
+    </tr>
+    <tr>
+      <td><code>SecurityIntegrationTest</code></td>
+      <td><code>backend/src/test/java/com/ritualfresh/security/SecurityIntegrationTest.java</code></td>
+      <td>Accesos privados, tokens invalidos/expirados/cerrados, permisos por rol y cookie <code>HttpOnly</code>.</td>
+      <td>Cubre la capa de seguridad HTTP mejor que la version anterior del documento.</td>
+    </tr>
+    <tr>
+      <td><code>AdminServiceTest</code></td>
+      <td><code>backend/src/test/java/com/ritualfresh/admin/AdminServiceTest.java</code></td>
+      <td>Métricas, detalle y transiciones administrativas.</td>
+      <td>Apoya casos de <code>ADMIN</code> que aparecen en el dominio.</td>
+    </tr>
+    <tr>
+      <td><code>ProfileServiceTest</code></td>
+      <td><code>backend/src/test/java/com/ritualfresh/profiles/ProfileServiceTest.java</code></td>
+      <td>Base funcional de M02 con dependencia real sobre sesion y usuario.</td>
+      <td>Queda para revisar mas adelante como siguiente modulo.</td>
+    </tr>
+  </table>
+
+  <h2>10. Pendientes para la siguiente pasada</h2>
+  <ul>
+    <li>Revisar <code>auth/controller</code> y confirmar que no duplique reglas de negocio.</li>
+    <li>Revisar <code>auth/dto</code> y confirmar contratos HTTP, especialmente enums y campos expuestos.</li>
+    <li>Marcar formalmente <code>auth/security</code> como revisado completo si no aparecen mas clases.</li>
+    <li>Seguir con <code>profiles/model</code>, <code>profiles/repository</code> y <code>profiles/service</code>.</li>
+    <li>Si el frontend avanza, revisar que las rutas y payloads consuman los contratos actuales del backend.</li>
+  </ul>
+
+  <h2>11. Conclusion</h2>
+  <p>El backend de RitualFresh sigue mostrando una base ordenada y con buena trazabilidad para un proyecto academico. En esta etapa ya quedo auditado el nucleo de negocio de M01 dentro de <code>auth/model</code>, <code>auth/repository</code> y <code>auth/service</code>, se valido manualmente el flujo real de correos con Mailtrap, se habilito el reenvio publico del enlace de validacion, se migro el transporte principal de sesion a cookie <code>HttpOnly</code> y se agrego la autoeliminacion logica de la cuenta del propio usuario. El siguiente paso razonable ya no es volver sobre ese nucleo, sino completar la auditoria de <code>auth/controller</code> y <code>auth/dto</code>, y despues avanzar sobre el modulo <code>profiles</code>.</p>
+</body>
+</html>

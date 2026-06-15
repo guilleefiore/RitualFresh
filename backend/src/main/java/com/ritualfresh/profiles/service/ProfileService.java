@@ -13,6 +13,7 @@ import com.ritualfresh.profiles.model.WorkerProfile;
 import com.ritualfresh.profiles.repository.ClientProfileRepository;
 import com.ritualfresh.profiles.repository.WorkerProfileRepository;
 import com.ritualfresh.shared.exception.BusinessRuleException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
 @Service
+@RequiredArgsConstructor
 public class ProfileService {
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9+()\\-\\s]{7,30}$");
     private static final Pattern STREET_PATTERN = Pattern.compile("^[\\p{L}0-9 .'-]{2,120}$");
@@ -30,15 +32,6 @@ public class ProfileService {
     private final UserService userService;
     private final ClientProfileRepository clientProfileRepository;
     private final WorkerProfileRepository workerProfileRepository;
-
-    public ProfileService(
-            UserService userService,
-            ClientProfileRepository clientProfileRepository,
-            WorkerProfileRepository workerProfileRepository) {
-        this.userService = userService;
-        this.clientProfileRepository = clientProfileRepository;
-        this.workerProfileRepository = workerProfileRepository;
-    }
 
     @PreAuthorize("hasRole('CLIENT')")
     @Transactional

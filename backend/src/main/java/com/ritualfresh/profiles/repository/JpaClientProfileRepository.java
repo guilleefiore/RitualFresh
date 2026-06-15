@@ -1,17 +1,15 @@
 package com.ritualfresh.profiles.repository;
 
 import com.ritualfresh.profiles.model.ClientProfile;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
+@RequiredArgsConstructor
 public class JpaClientProfileRepository implements ClientProfileRepository {
     private final ClientProfileJpaRepository clientProfileJpaRepository;
-
-    public JpaClientProfileRepository(ClientProfileJpaRepository clientProfileJpaRepository) {
-        this.clientProfileJpaRepository = clientProfileJpaRepository;
-    }
 
     @Override
     public ClientProfile save(ClientProfile profile) {

@@ -1,17 +1,15 @@
 package com.ritualfresh.profiles.repository;
 
 import com.ritualfresh.profiles.model.WorkerProfile;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
+@RequiredArgsConstructor
 public class JpaWorkerProfileRepository implements WorkerProfileRepository {
     private final WorkerProfileJpaRepository workerProfileJpaRepository;
-
-    public JpaWorkerProfileRepository(WorkerProfileJpaRepository workerProfileJpaRepository) {
-        this.workerProfileJpaRepository = workerProfileJpaRepository;
-    }
 
     @Override
     public WorkerProfile save(WorkerProfile profile) {

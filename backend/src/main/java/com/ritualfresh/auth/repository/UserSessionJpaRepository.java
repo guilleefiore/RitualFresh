@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.ritualfresh.auth.model.UserSession;
 
 import java.util.Optional;
-
+// Interfaz de Spring Data JPA.
 public interface UserSessionJpaRepository extends JpaRepository<UserSession, Long> {
     Optional<UserSession> findByToken(String token);
 }

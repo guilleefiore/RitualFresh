@@ -49,37 +49,116 @@ Herramientas sugeridas:
 - REST Client.
 - Swagger/OpenAPI.
 
-#### Prueba manual con Postman
+#### Prueba manual con Postman o curl
 
-Para la validación local del backend y de la persistencia en PostgreSQL se recomienda un flujo manual simple en Postman:
+Para la validación local del backend y de la persistencia en PostgreSQL se recomienda un flujo manual simple con Mailtrap como bandeja de prueba de correos.
+
+##### Prerrequisitos
+
+- Backend levantado con `docker compose up --build`.
+- Archivo `.env` completo con credenciales válidas de Mailtrap.
+- Sandbox de Mailtrap accesible para revisar correos enviados.
+
+##### Flujo manual validado para `M01`
 
 1. `POST /api/users/register`
-   - Verifica registro de usuario y generación del `accountValidationToken`.
-2. `GET /api/users/validation?token=...`
+   - Request ejemplo:
+     ```json
+     {
+       "firstName": "Guillermina",
+       "lastName": "Fiore",
+       "documentNumber": "12345678",
+       "phoneNumber": "2610000000",
+       "email": "guillermina.test@example.com",
+       "password": "clave123",
+       "confirmPassword": "clave123",
+       "role": "CLIENT"
+     }
+     ```
+   - Verifica registro de usuario con cuenta en estado pendiente.
+   - Verifica que la API ya no exponga el token de validación en la respuesta.
+2. Mailtrap: correo `RitualFresh - Validacion de cuenta`
+   - Verifica recepción del correo en el sandbox.
+   - Verifica que el cuerpo incluya el link `GET /api/users/validation?token=...`.
+3. `POST /api/users/validation/resend`
+   - Request ejemplo:
+     ```json
+     {
+       "email": "guillermina.test@example.com"
+     }
+     ```
+   - Verifica que el backend reemita un nuevo enlace de validación para cuentas todavía pendientes.
+   - Verifica que el token anterior deje de ser válido cuando se reenvía uno nuevo.
+4. Mailtrap: correo `RitualFresh - Validacion de cuenta`
+   - Verifica recepción del correo reenviado en el sandbox.
+   - Verifica que el cuerpo incluya el nuevo link `GET /api/users/validation?token=...`.
+5. `GET /api/users/validation?token=...`
    - Verifica activación de la cuenta.
-3. `POST /api/users/login`
+   - Resultado esperado: `accountStatus = ACTIVE`.
+6. `POST /api/users/login`
+   - Request ejemplo:
+     ```json
+     {
+       "email": "guillermina.test@example.com",
+       "password": "clave123"
+     }
+     ```
    - Verifica autenticación y generación del `sessionToken`.
-4. `GET /api/profiles/me`
-   - Verifica acceso autenticado con `Authorization: Bearer <sessionToken>`.
-5. `POST /api/profiles/clientes` o `POST /api/profiles/trabajadores`
-   - Verifica persistencia real del perfil asociado al usuario autenticado.
-6. `POST /api/users/logout`
-   - Verifica cierre de sesión y rechazo posterior del mismo token.
-7. `GET /api/admin/users`
-   - Verifica acceso sólo con usuario `ADMIN`.
+   - Verifica que la respuesta incluya `Set-Cookie` con la cookie `HttpOnly` de sesión.
+7. `POST /api/users/password-reset`
+   - Request ejemplo:
+     ```json
+     {
+       "email": "guillermina.test@example.com"
+     }
+     ```
+   - Verifica respuesta exitosa con `expiresAt`.
+   - Verifica que la API ya no exponga el token de recuperación en la respuesta.
+8. Mailtrap: correo `RitualFresh - Recuperacion de contrasena`
+   - Verifica recepción del correo en el sandbox.
+   - Verifica que el cuerpo incluya link y token de recuperación.
+9. `POST /api/users/password-reset/confirm`
+   - Request ejemplo:
+     ```json
+     {
+       "resetToken": "<token tomado del correo>",
+       "password": "nuevaClave123",
+       "confirmPassword": "nuevaClave123"
+     }
+     ```
+   - Verifica cambio efectivo de contraseña.
+10. `POST /api/users/login` con la nueva contraseña
+   - Verifica autenticación exitosa con `nuevaClave123`.
+11. `POST /api/users/login` con la contraseña vieja
+   - Verifica rechazo de credenciales viejas.
+12. `DELETE /api/users/me`
+    - Verifica autoeliminación lógica de la cuenta autenticada.
+    - Verifica que la respuesta expire la cookie de sesión.
+13. `POST /api/users/login` con la contraseña usada antes de eliminar la cuenta
+    - Verifica rechazo porque la cuenta quedó en estado `DELETED`.
+14. `GET /api/profiles/me`
+    - Verifica acceso autenticado usando la cookie de sesión.
+15. `POST /api/profiles/clientes` o `POST /api/profiles/trabajadores`
+    - Verifica persistencia real del perfil asociado al usuario autenticado.
+16. `POST /api/users/logout`
+    - Verifica cierre de sesión y rechazo posterior del mismo token.
+17. `GET /api/admin/users`
+    - Verifica acceso sólo con usuario `ADMIN`.
 
 Configuración mínima sugerida:
 
 - Base URL local: `http://localhost:8080`.
 - Header común: `Content-Type: application/json`.
-- Header para endpoints protegidos: `Authorization: Bearer <sessionToken>`.
+- Para frontend o pruebas cercanas al comportamiento final, reutilizar la cookie de sesión devuelta por login.
+- Para debugging manual o tests técnicos, el backend aún acepta `Authorization: Bearer <sessionToken>` como compatibilidad.
 
 La confirmación de persistencia se completa revisando las tablas creadas por Hibernate en PostgreSQL, por ejemplo `users`, `user_sessions`, `client_profiles` y `worker_profiles`.
 
 Si se documenta evidencia manual, conviene registrar:
 
 - request utilizado;
-- token obtenido;
+- asunto del correo recibido en Mailtrap;
+- enlace o token usado desde el correo;
 - respuesta esperada;
 - respuesta observada;
 - estado final de la prueba.

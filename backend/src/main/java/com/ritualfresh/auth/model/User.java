@@ -60,6 +60,8 @@ public class User {
     @Column(length = 80)
     private String accountValidationToken;
 
+    private LocalDateTime accountValidationTokenExpiresAt;
+
     @Column(length = 80)
     private String passwordResetToken;
 
@@ -76,8 +78,15 @@ public class User {
         user.role = data.role();
         user.accountStatus = AccountStatus.PENDING_VALIDATION;
         user.createdAt = data.createdAt();
-        user.accountValidationToken = data.accountValidationToken();
+        user.startAccountValidation(data.accountValidationToken(), data.accountValidationTokenExpiresAt());
         return user;
+    }
+
+    // Permite simular el autoincremental de la BD en repositorios en memoria.
+    public void assignIdIfMissing(long id) {
+        if (this.id == null) {
+            this.id = id;
+        }
     }
 
     // Datos agrupados para registrar un usuario nuevo sin pasar muchos parámetros sueltos.
@@ -90,7 +99,8 @@ public class User {
             String passwordHash,
             UserRole role,
             LocalDateTime createdAt,
-            String accountValidationToken) {
+            String accountValidationToken,
+            LocalDateTime accountValidationTokenExpiresAt) {
     }
 
     // Indica si la cuenta ya quedó habilitada para operar.
@@ -101,6 +111,19 @@ public class User {
     // Confirma la cuenta y limpia el token de validación.
     public void validateAccount() {
         changeAccountStatus(AccountStatus.ACTIVE);
+    }
+
+    // Inicia o reinicia la ventana de validacion de cuenta.
+    public void startAccountValidation(String accountValidationToken, LocalDateTime expiresAt) {
+        this.accountValidationToken = accountValidationToken;
+        this.accountValidationTokenExpiresAt = expiresAt;
+    }
+
+    // Verifica si el token de validacion sigue vigente.
+    public boolean hasValidAccountValidationToken(LocalDateTime now) {
+        return accountValidationToken != null
+                && accountValidationTokenExpiresAt != null
+                && accountValidationTokenExpiresAt.isAfter(now);
     }
 
     // Actualiza los datos básicos editables del usuario.
@@ -136,6 +159,7 @@ public class User {
         this.accountStatus = accountStatus;
         this.deactivatedAt = accountStatus == AccountStatus.ACTIVE ? null : LocalDateTime.now();
         this.accountValidationToken = null;
+        this.accountValidationTokenExpiresAt = null;
         this.passwordResetToken = null;
         this.passwordResetTokenExpiresAt = null;
     }

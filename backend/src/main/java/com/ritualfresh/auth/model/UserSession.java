@@ -50,6 +50,13 @@ public class UserSession {
         this.expiresAt = expiresAt;
     }
 
+    // Permite simular el autoincremental de la BD en repositorios en memoria.
+    public void assignIdIfMissing(long id) {
+        if (this.id == null) {
+            this.id = id;
+        }
+    }
+
     // Indica si la sesion sigue vigente y no fue cerrada.
     public boolean isActive(LocalDateTime now) {
         return closedAt == null && expiresAt.isAfter(now);

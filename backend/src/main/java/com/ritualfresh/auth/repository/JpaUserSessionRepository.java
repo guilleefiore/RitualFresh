@@ -1,17 +1,15 @@
 package com.ritualfresh.auth.repository;
 
 import com.ritualfresh.auth.model.UserSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
+@RequiredArgsConstructor
 public class JpaUserSessionRepository implements UserSessionRepository {
     private final UserSessionJpaRepository userSessionJpaRepository;
-
-    public JpaUserSessionRepository(UserSessionJpaRepository userSessionJpaRepository) {
-        this.userSessionJpaRepository = userSessionJpaRepository;
-    }
 
     @Override
     public UserSession save(UserSession session) {
@@ -24,6 +22,6 @@ public class JpaUserSessionRepository implements UserSessionRepository {
             return Optional.empty();
         }
 
-        return userSessionJpaRepository.findByToken(token.trim());
+        return userSessionJpaRepository.findByToken(token.trim()); // .trim() elimina espacios al inicio y final
     }
 }

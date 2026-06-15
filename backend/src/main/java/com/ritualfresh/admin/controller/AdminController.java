@@ -5,6 +5,7 @@ import com.ritualfresh.admin.dto.AdminUserResponse;
 import com.ritualfresh.admin.dto.AdminUserStatusRequest;
 import com.ritualfresh.admin.service.AdminService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,12 +20,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
+@RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
-
-    public AdminController(AdminService adminService) {
-        this.adminService = adminService;
-    }
 
     @GetMapping("/users")
     public List<AdminUserResponse> listUsers(Authentication authentication) {

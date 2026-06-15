@@ -3,15 +3,16 @@ services:
     image: postgres:17
     container_name: ritualfresh-postgres
     environment:
-      POSTGRES_DB: ritualfresh
-      POSTGRES_USER: ritualfresh
-      POSTGRES_PASSWORD: ritualfresh
+      # Credenciales locales de PostgreSQL. Se pueden sobreescribir desde .env.
+      POSTGRES_DB: ${POSTGRES_DB:-ritualfresh}
+      POSTGRES_USER: ${POSTGRES_USER:-ritualfresh}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ritualfresh}
     ports:
       - "5432:5432"
     volumes:
       - ritualfresh_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ritualfresh -d ritualfresh"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ritualfresh} -d ${POSTGRES_DB:-ritualfresh}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -24,9 +25,22 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      RITUALFRESH_DB_URL: jdbc:postgresql://postgres:5432/ritualfresh
-      RITUALFRESH_DB_USER: ritualfresh
-      RITUALFRESH_DB_PASSWORD: ritualfresh
+      # Variables de base de datos que Spring Boot toma al arrancar.
+      RITUALFRESH_DB_URL: ${RITUALFRESH_DB_URL:-jdbc:postgresql://postgres:5432/ritualfresh}
+      RITUALFRESH_DB_USER: ${RITUALFRESH_DB_USER:-ritualfresh}
+      RITUALFRESH_DB_PASSWORD: ${RITUALFRESH_DB_PASSWORD:-ritualfresh}
+      # Activa el envio real de correos si el .env lo habilita.
+      RITUALFRESH_MAIL_ENABLED: ${RITUALFRESH_MAIL_ENABLED:-false}
+      RITUALFRESH_MAIL_FROM: ${RITUALFRESH_MAIL_FROM:-no-reply@ritualfresh.local}
+      RITUALFRESH_BACKEND_BASE_URL: ${RITUALFRESH_BACKEND_BASE_URL:-http://localhost:8080}
+      RITUALFRESH_FRONTEND_BASE_URL: ${RITUALFRESH_FRONTEND_BASE_URL:-http://localhost:5173}
+      # Credenciales SMTP leidas por Spring Mail.
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-2525}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:-true}
     ports:
       - "8080:8080"
 

@@ -12,11 +12,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
         name = "client_profiles",
         uniqueConstraints = @UniqueConstraint(name = "uk_client_profiles_user", columnNames = "user_id"))
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ClientProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,9 +64,6 @@ public class ClientProfile {
     @Column(length = 500)
     private String hiringPreferences;
 
-    protected ClientProfile() {
-    }
-
     public ClientProfile(
             User user,
             String photoUrl,
@@ -92,58 +94,6 @@ public class ClientProfile {
         if (this.id == null) {
             this.id = id;
         }
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getPhotoUrl() {
-        return photoUrl;
-    }
-
-    public int getClientRating() {
-        return clientRating;
-    }
-
-    public String getContactPhone() {
-        return contactPhone;
-    }
-
-    public String getStreetName() {
-        return streetName;
-    }
-
-    public String getStreetNumber() {
-        return streetNumber;
-    }
-
-    public String getFloor() {
-        return floor;
-    }
-
-    public String getApartment() {
-        return apartment;
-    }
-
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public String getProvince() {
-        return province;
-    }
-
-    public String getHiringPreferences() {
-        return hiringPreferences;
     }
 
     public void edit(
