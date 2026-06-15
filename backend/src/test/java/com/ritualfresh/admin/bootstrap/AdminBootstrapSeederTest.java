@@ -43,7 +43,8 @@ class AdminBootstrapSeederTest {
                 "hash",
                 UserRole.ADMIN,
                 LocalDateTime.now(),
-                UUID.randomUUID().toString()));
+                UUID.randomUUID().toString(),
+                LocalDateTime.now().plusDays(1)));
         admin.validateAccount();
         userRepository.save(admin);
 

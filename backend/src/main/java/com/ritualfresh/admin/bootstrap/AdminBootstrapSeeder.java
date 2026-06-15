@@ -64,7 +64,8 @@ public class AdminBootstrapSeeder implements ApplicationRunner {
                 PasswordSecurity.generateHash(password),
                 UserRole.ADMIN,
                 LocalDateTime.now(),
-                UUID.randomUUID().toString()));
+                UUID.randomUUID().toString(),
+                LocalDateTime.now().plusDays(1)));
         admin.validateAccount();
         userRepository.save(admin);
     }

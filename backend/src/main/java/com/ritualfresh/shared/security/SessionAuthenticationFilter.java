@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -22,44 +23,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class SessionAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final UserSessionRepository userSessionRepository;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
 
-    public SessionAuthenticationFilter(
-            UserSessionRepository userSessionRepository,
-            RestAuthenticationEntryPoint authenticationEntryPoint) {
-        this.userSessionRepository = userSessionRepository;
-        this.authenticationEntryPoint = authenticationEntryPoint;
-    }
-
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-        String authorization = request.getHeader("Authorization");
-        if (authorization == null || authorization.isBlank()) {
+        String sessionToken = resolveSessionToken(request, response);
+        if (sessionToken == null) {
             filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (!authorization.startsWith(BEARER_PREFIX)) {
-            authenticationEntryPoint.commence(
-                    request,
-                    response,
-                    new InsufficientAuthenticationException("Debe iniciar sesion para acceder a esta funcionalidad."));
-            return;
-        }
-
-        String sessionToken = authorization.substring(BEARER_PREFIX.length()).trim();
-        if (sessionToken.isBlank()) {
-            authenticationEntryPoint.commence(
-                    request,
-                    response,
-                    new InsufficientAuthenticationException("Debe iniciar sesion para acceder a esta funcionalidad."));
             return;
         }
 
@@ -88,5 +66,31 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             authenticationEntryPoint.commence(request, response, exception);
         }
+    }
+
+    private String resolveSessionToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String authorization = request.getHeader("Authorization");
+        if (authorization != null && !authorization.isBlank()) {
+            if (!authorization.startsWith(BEARER_PREFIX)) {
+                authenticationEntryPoint.commence(
+                        request,
+                        response,
+                        new InsufficientAuthenticationException("Debe iniciar sesion para acceder a esta funcionalidad."));
+                return null;
+            }
+
+            String bearerToken = authorization.substring(BEARER_PREFIX.length()).trim();
+            if (bearerToken.isBlank()) {
+                authenticationEntryPoint.commence(
+                        request,
+                        response,
+                        new InsufficientAuthenticationException("Debe iniciar sesion para acceder a esta funcionalidad."));
+                return null;
+            }
+
+            return bearerToken;
+        }
+
+        return SessionCookieUtils.resolveSessionTokenFromCookie(request);
     }
 }

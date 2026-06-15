@@ -11,6 +11,7 @@ import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.model.UserRole;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.auth.repository.UserSessionRepository;
+import com.ritualfresh.notifications.InMemoryAccountEmailService;
 import com.ritualfresh.profiles.dto.CreateClientProfileRequest;
 import com.ritualfresh.profiles.dto.CreateWorkerProfileRequest;
 import com.ritualfresh.profiles.dto.UpdateWorkerProfileRequest;
@@ -42,7 +43,7 @@ class ProfileServiceTest {
         SecurityContextHolder.clearContext();
         UserRepository userRepository = new InMemoryUserRepository();
         UserSessionRepository userSessionRepository = new InMemoryUserSessionRepository();
-        userService = new UserService(userRepository, userSessionRepository);
+        userService = new UserService(userRepository, userSessionRepository, new InMemoryAccountEmailService());
         profileService = new ProfileService(
                 userService,
                 new InMemoryClientProfileRepository(),

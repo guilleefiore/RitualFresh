@@ -12,6 +12,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
@@ -19,6 +22,8 @@ import java.math.BigDecimal;
 @Table(
         name = "worker_profiles",
         uniqueConstraints = @UniqueConstraint(name = "uk_worker_profiles_user", columnNames = "user_id"))
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WorkerProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,9 +57,6 @@ public class WorkerProfile {
     @Column(precision = 12, scale = 2)
     private BigDecimal hourlyRate;
 
-    protected WorkerProfile() {
-    }
-
     public WorkerProfile(
             User user,
             String photoUrl,
@@ -79,46 +81,6 @@ public class WorkerProfile {
         if (this.id == null) {
             this.id = id;
         }
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getPhotoUrl() {
-        return photoUrl;
-    }
-
-    public int getRankingPosition() {
-        return rankingPosition;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public int getYearsOfExperience() {
-        return yearsOfExperience;
-    }
-
-    public String getOfferedServices() {
-        return offeredServices;
-    }
-
-    public String getWorkArea() {
-        return workArea;
-    }
-
-    public String getAvailability() {
-        return availability;
-    }
-
-    public BigDecimal getHourlyRate() {
-        return hourlyRate;
     }
 
     public void edit(

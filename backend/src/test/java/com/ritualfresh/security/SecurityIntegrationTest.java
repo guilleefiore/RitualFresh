@@ -11,6 +11,8 @@ import com.ritualfresh.auth.repository.InMemoryUserSessionRepository;
 import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.service.UserService;
+import com.ritualfresh.notifications.InMemoryAccountEmailService;
+import com.ritualfresh.notifications.service.AccountEmailService;
 import com.ritualfresh.profiles.controller.ProfileController;
 import com.ritualfresh.profiles.repository.ClientProfileRepository;
 import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
@@ -29,12 +31,15 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDateTime;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -59,6 +64,9 @@ class SecurityIntegrationTest {
 
     @Autowired
     private UserSessionRepository userSessionRepository;
+
+    @Autowired
+    private InMemoryAccountEmailService accountEmailService;
 
     @BeforeEach
     void setUp() {
@@ -161,6 +169,121 @@ class SecurityIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void loginSetsHttpOnlySessionCookieAndAllowsAuthenticatedAccess() throws Exception {
+        User user = User.register(new User.RegistrationData(
+                "Cookie",
+                "User",
+                "55555555",
+                "2611234567",
+                "cookie.user@example.com",
+                com.ritualfresh.auth.security.PasswordSecurity.generateHash("clave123"),
+                UserRole.CLIENT,
+                LocalDateTime.now().minusHours(1),
+                "validation-token-cookie",
+                LocalDateTime.now().plusDays(1)));
+        user.validateAccount();
+        userRepository.save(user);
+
+        MvcResult loginResult = mockMvc.perform(post("/api/users/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "cookie.user@example.com",
+                                  "password": "clave123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("RITUALFRESH_SESSION=")))
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("HttpOnly")))
+                .andReturn();
+
+        String setCookieHeader = loginResult.getResponse().getHeader("Set-Cookie");
+        String sessionCookieValue = extractCookieValue(setCookieHeader);
+
+        mockMvc.perform(get("/api/profiles/me")
+                        .cookie(new jakarta.servlet.http.Cookie("RITUALFRESH_SESSION", sessionCookieValue)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El usuario no posee un perfil creado."));
+    }
+
+    @Test
+    void authenticatedUserCanDeleteOwnAccountAndCookieIsExpired() throws Exception {
+        User user = User.register(new User.RegistrationData(
+                "Delete",
+                "User",
+                "66666666",
+                "2617654321",
+                "delete.user@example.com",
+                com.ritualfresh.auth.security.PasswordSecurity.generateHash("clave123"),
+                UserRole.CLIENT,
+                LocalDateTime.now().minusHours(1),
+                "validation-token-delete",
+                LocalDateTime.now().plusDays(1)));
+        user.validateAccount();
+        userRepository.save(user);
+
+        MvcResult loginResult = mockMvc.perform(post("/api/users/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "delete.user@example.com",
+                                  "password": "clave123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String sessionCookieValue = extractCookieValue(loginResult.getResponse().getHeader("Set-Cookie"));
+
+        mockMvc.perform(delete("/api/users/me")
+                        .cookie(new jakarta.servlet.http.Cookie("RITUALFRESH_SESSION", sessionCookieValue)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("RITUALFRESH_SESSION=")))
+                .andExpect(jsonPath("$.message").value("Cuenta eliminada correctamente."));
+
+        mockMvc.perform(post("/api/users/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "delete.user@example.com",
+                                  "password": "clave123"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("La cuenta no se encuentra activa."));
+    }
+
+    @Test
+    void resendValidationLinkIsPublicAndRefreshesTheToken() throws Exception {
+        User user = User.register(new User.RegistrationData(
+                "Pending",
+                "User",
+                "77777777",
+                "2619988776",
+                "pending.user@example.com",
+                com.ritualfresh.auth.security.PasswordSecurity.generateHash("clave123"),
+                UserRole.CLIENT,
+                LocalDateTime.now().minusHours(1),
+                "validation-token-pending",
+                LocalDateTime.now().minusHours(1)));
+        userRepository.save(user);
+
+        mockMvc.perform(post("/api/users/validation/resend")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "pending.user@example.com"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Se envio un nuevo enlace de validacion al correo indicado."));
+
+        User updatedUser = userRepository.findByEmail("pending.user@example.com").orElseThrow();
+        org.junit.jupiter.api.Assertions.assertTrue(!"validation-token-pending".equals(updatedUser.getAccountValidationToken()));
+        org.junit.jupiter.api.Assertions.assertEquals(1, accountEmailService.getValidationTokens().size());
+    }
+
     private void persistSession(String token, UserRole role, LocalDateTime expiresAt, LocalDateTime closedAt) {
         User user = User.register(new User.RegistrationData(
                 "Test",
@@ -171,7 +294,8 @@ class SecurityIntegrationTest {
                 "hash",
                 role,
                 LocalDateTime.now().minusHours(1),
-                "validation-token-" + token));
+                "validation-token-" + token,
+                LocalDateTime.now().plusDays(1)));
         user.validateAccount();
         userRepository.save(user);
 
@@ -181,6 +305,14 @@ class SecurityIntegrationTest {
         }
 
         userSessionRepository.save(session);
+    }
+
+    private String extractCookieValue(String setCookieHeader) {
+        if (setCookieHeader == null || setCookieHeader.isBlank()) {
+            throw new IllegalStateException("No se encontro la cookie de sesion en la respuesta.");
+        }
+
+        return setCookieHeader.split(";", 2)[0].split("=", 2)[1];
     }
 
     @TestConfiguration
@@ -206,8 +338,16 @@ class SecurityIntegrationTest {
         }
 
         @Bean
-        UserService userService(UserRepository userRepository, UserSessionRepository userSessionRepository) {
-            return new UserService(userRepository, userSessionRepository);
+        AccountEmailService accountEmailService() {
+            return new InMemoryAccountEmailService();
+        }
+
+        @Bean
+        UserService userService(
+                UserRepository userRepository,
+                UserSessionRepository userSessionRepository,
+                AccountEmailService accountEmailService) {
+            return new UserService(userRepository, userSessionRepository, accountEmailService);
         }
 
         @Bean

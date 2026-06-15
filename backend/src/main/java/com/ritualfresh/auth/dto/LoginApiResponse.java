@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 public record LoginApiResponse(
         String message,
-        String sessionToken,
         LocalDateTime sessionExpiresAt,
         UserApiResponse user) {
 }

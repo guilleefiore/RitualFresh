@@ -16,13 +16,19 @@ import com.ritualfresh.auth.dto.RegisterUserApiRequest;
 import com.ritualfresh.auth.dto.RegisterUserApiResponse;
 import com.ritualfresh.auth.dto.RegisterUserRequest;
 import com.ritualfresh.auth.dto.RegisterUserResult;
-import com.ritualfresh.auth.dto.RegisterUserRole;
+import com.ritualfresh.auth.dto.ResendAccountValidationApiRequest;
+import com.ritualfresh.auth.dto.ResendAccountValidationApiResponse;
 import com.ritualfresh.auth.dto.UserApiResponse;
 import com.ritualfresh.auth.model.User;
 import com.ritualfresh.auth.service.UserService;
+import com.ritualfresh.shared.security.SessionCookieUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,17 +37,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+// Controlador REST para endpoints de usuarios (capa delgada: HTTP -> service)
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
+    // Crear cuenta (persiste usuario y envía email de validación)
     public RegisterUserApiResponse registerUser(@Valid @RequestBody RegisterUserApiRequest request) {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
                 request.firstName(),
@@ -55,11 +60,11 @@ public class UserController {
 
         return new RegisterUserApiResponse(
                 result.message(),
-                result.accountValidationToken(),
                 UserApiResponse.from(result.user()));
     }
 
     @GetMapping("/validation")
+    // Validar cuenta usando token enviado por email
     public AccountValidationApiResponse validateAccount(@RequestParam String token) {
         User user = userService.validateAccount(token);
 
@@ -68,31 +73,44 @@ public class UserController {
                 UserApiResponse.from(user));
     }
 
+    @PostMapping("/validation/resend")
+    // Reenviar email de validación
+    public ResendAccountValidationApiResponse resendAccountValidation(
+            @Valid @RequestBody ResendAccountValidationApiRequest request) {
+        userService.resendAccountValidation(request.email());
+
+        return new ResendAccountValidationApiResponse("Se envio un nuevo enlace de validacion al correo indicado.");
+    }
+
     @PostMapping("/login")
-    public LoginApiResponse login(@Valid @RequestBody LoginApiRequest request) {
+    // Autenticar y establecer cookie de sesión (HttpOnly)
+    public LoginApiResponse login(@Valid @RequestBody LoginApiRequest request, HttpServletResponse response) {
         LoginResult result = userService.login(new LoginRequest(
                 request.email(),
                 request.password()));
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                SessionCookieUtils.buildSessionCookieHeader(result.sessionToken(), result.sessionExpiresAt()));
 
         return new LoginApiResponse(
                 "Login de sesion exitoso.",
-                result.sessionToken(),
                 result.sessionExpiresAt(),
                 UserApiResponse.from(result.user()));
     }
 
     @PostMapping("/password-reset")
+    // Iniciar recuperación de contraseña (genera token y envía enlace)
     public PasswordResetApiResponse requestPasswordReset(@Valid @RequestBody PasswordResetApiRequest request) {
         PasswordResetResult result = userService.requestPasswordReset(
                 new PasswordResetRequest(request.email()));
 
         return new PasswordResetApiResponse(
                 result.message(),
-                result.resetToken(),
                 result.expiresAt());
     }
 
     @PostMapping("/password-reset/confirm")
+    // Confirmar cambio de contraseña usando token
     public MessageApiResponse confirmPasswordReset(@Valid @RequestBody ConfirmPasswordResetApiRequest request) {
         userService.confirmPasswordReset(new ConfirmPasswordResetRequest(
                 request.resetToken(),
@@ -103,10 +121,21 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public MessageApiResponse closeSession(Authentication authentication) {
+    // Cerrar sesión: invalidar sesión y expirar cookie
+    public MessageApiResponse closeSession(Authentication authentication, HttpServletResponse response) {
         userService.closeSession(extractSessionToken(authentication));
+        response.addHeader(HttpHeaders.SET_COOKIE, SessionCookieUtils.buildExpiredSessionCookieHeader());
 
         return new MessageApiResponse("Session cerrada correctamente.");
+    }
+
+    @DeleteMapping("/me")
+    // Eliminar propia cuenta (borrado lógico) y cerrar sesión
+    public MessageApiResponse deleteMyAccount(Authentication authentication, HttpServletResponse response) {
+        userService.deleteAuthenticatedAccount(extractSessionToken(authentication));
+        response.addHeader(HttpHeaders.SET_COOKIE, SessionCookieUtils.buildExpiredSessionCookieHeader());
+
+        return new MessageApiResponse("Cuenta eliminada correctamente.");
     }
 
     private String extractSessionToken(Authentication authentication) {

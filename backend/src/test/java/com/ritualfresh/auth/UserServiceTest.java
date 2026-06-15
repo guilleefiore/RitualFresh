@@ -10,26 +10,42 @@ import com.ritualfresh.auth.dto.RegisterUserResult;
 import com.ritualfresh.auth.model.AccountStatus;
 import com.ritualfresh.auth.model.User;
 import com.ritualfresh.auth.model.UserRole;
+import com.ritualfresh.auth.security.PasswordSecurity;
+import com.ritualfresh.notifications.InMemoryAccountEmailService;
 import com.ritualfresh.auth.repository.InMemoryUserRepository;
 import com.ritualfresh.auth.repository.InMemoryUserSessionRepository;
 import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
+import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.List;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserServiceTest {
     private UserService userService;
+    private InMemoryAccountEmailService accountEmailService;
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
-        UserRepository userRepository = new InMemoryUserRepository();
-        userService = new UserService(userRepository, new InMemoryUserSessionRepository());
+        SecurityContextHolder.clearContext();
+        userRepository = new InMemoryUserRepository();
+        UserSessionRepository userSessionRepository = new InMemoryUserSessionRepository();
+        accountEmailService = new InMemoryAccountEmailService();
+        userService = new UserService(userRepository, userSessionRepository, accountEmailService);
     }
 
     @Test
@@ -39,6 +55,7 @@ class UserServiceTest {
         assertEquals(AccountStatus.PENDING_VALIDATION, result.user().getAccountStatus());
         assertEquals(UserRole.CLIENT, result.user().getRole());
         assertNotNull(result.accountValidationToken());
+        assertEquals(1, accountEmailService.getValidationTokens().size());
     }
 
     @Test
@@ -131,6 +148,7 @@ class UserServiceTest {
 
         assertNotNull(reset.resetToken());
         assertNotNull(loginResult.sessionToken());
+        assertEquals(1, accountEmailService.getResetTokens().size());
     }
 
     @Test
@@ -139,6 +157,90 @@ class UserServiceTest {
                 new PasswordResetRequest("nadie@example.com")));
 
         assertEquals("No existe una cuenta asociada al correo ingresado.", exception.getMessage());
+    }
+
+    @Test
+    void authenticatedUserCanDeleteOwnAccountAndCurrentSession() {
+        RegisterUserResult result = registerClient();
+        userService.validateAccount(result.accountValidationToken());
+        LoginResult loginResult = userService.login(new LoginRequest(
+                "guillermina@example.com",
+                "clave123"));
+        authenticate(loginResult);
+
+        userService.deleteAuthenticatedAccount(loginResult.sessionToken());
+
+        User deletedUser = userRepository.findByEmail("guillermina@example.com").orElseThrow();
+        assertEquals(AccountStatus.DELETED, deletedUser.getAccountStatus());
+        assertTrue(deletedUser.getDeactivatedAt() != null);
+
+        BusinessRuleException loginException = assertThrows(BusinessRuleException.class, () -> userService.login(new LoginRequest(
+                "guillermina@example.com",
+                "clave123")));
+        assertEquals("La cuenta no se encuentra activa.", loginException.getMessage());
+
+        BusinessRuleException sessionException = assertThrows(BusinessRuleException.class, () -> userService.getAuthenticatedUser(loginResult.sessionToken()));
+        assertEquals("La sesion expiro. Debe iniciar sesion nuevamente.", sessionException.getMessage());
+    }
+
+    @Test
+    void authenticatedUserCannotCloseAnotherUsersSession() {
+        RegisterUserResult firstUser = registerClient();
+        userService.validateAccount(firstUser.accountValidationToken());
+        LoginResult firstSession = userService.login(new LoginRequest("guillermina@example.com", "clave123"));
+
+        RegisterUserResult secondUser = userService.registerUser(new RegisterUserRequest(
+                "Otra",
+                "Persona",
+                "87654321",
+                "2611111111",
+                "otra@example.com",
+                "clave123",
+                "clave123",
+                UserRole.CLIENT));
+        userService.validateAccount(secondUser.accountValidationToken());
+        LoginResult secondSession = userService.login(new LoginRequest("otra@example.com", "clave123"));
+
+        authenticate(firstSession);
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class,
+                () -> userService.closeSession(secondSession.sessionToken()));
+
+        assertEquals("La sesion indicada no pertenece al usuario autenticado.", exception.getMessage());
+        assertEquals(firstSession.sessionToken(), userService.getAuthenticatedSessionToken());
+        assertEquals("otra@example.com", userService.getAuthenticatedUser(secondSession.sessionToken()).getEmail());
+    }
+
+    @Test
+    void us01M01Rf01RejectsExpiredAccountValidationToken() {
+        RegisterUserResult result = registerClientWithValidationExpiration(LocalDateTime.now().minusHours(1));
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class,
+                () -> userService.validateAccount(result.accountValidationToken()));
+
+        assertEquals("El enlace de validacion no es valido o expiro.", exception.getMessage());
+    }
+
+    @Test
+    void us01M01Rf01ResendsValidationEmailAndRefreshesToken() {
+        RegisterUserResult result = registerClientWithValidationExpiration(LocalDateTime.now().minusHours(1));
+        String originalToken = result.accountValidationToken();
+
+        userService.resendAccountValidation("guillermina@example.com");
+
+        User updatedUser = userRepository.findByEmail("guillermina@example.com").orElseThrow();
+        String refreshedToken = updatedUser.getAccountValidationToken();
+
+        assertNotNull(refreshedToken);
+        assertTrue(accountEmailService.getValidationTokens().size() == 1);
+        assertTrue(!originalToken.equals(refreshedToken));
+
+        BusinessRuleException oldTokenException = assertThrows(BusinessRuleException.class,
+                () -> userService.validateAccount(originalToken));
+        assertEquals("El enlace de validacion no es valido o expiro.", oldTokenException.getMessage());
+
+        User validatedUser = userService.validateAccount(refreshedToken);
+        assertEquals(AccountStatus.ACTIVE, validatedUser.getAccountStatus());
     }
 
     private RegisterUserResult registerClient() {
@@ -151,5 +253,34 @@ class UserServiceTest {
                 "clave123",
                 "clave123",
                 UserRole.CLIENT));
+    }
+
+    private RegisterUserResult registerClientWithValidationExpiration(LocalDateTime accountValidationTokenExpiresAt) {
+        String accountValidationToken = UUID.randomUUID().toString();
+        User user = User.register(new User.RegistrationData(
+                "Guillermina",
+                "Fiore",
+                "12345678",
+                "2610000000",
+                "guillermina@example.com",
+                PasswordSecurity.generateHash("clave123"),
+                UserRole.CLIENT,
+                LocalDateTime.now(),
+                accountValidationToken,
+                accountValidationTokenExpiresAt));
+        userRepository.save(user);
+
+        return new RegisterUserResult(
+                user,
+                "Registro exitoso. Revise su correo para validar la cuenta.",
+                accountValidationToken);
+    }
+
+    private void authenticate(LoginResult session) {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                AuthenticatedUserPrincipal.from(session.user()),
+                session.sessionToken(),
+                List.of(new SimpleGrantedAuthority("ROLE_" + session.user().getRole().name())));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

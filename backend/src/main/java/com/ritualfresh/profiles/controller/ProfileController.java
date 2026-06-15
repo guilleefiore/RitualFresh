@@ -12,6 +12,7 @@ import com.ritualfresh.profiles.dto.UpdateWorkerProfileApiRequest;
 import com.ritualfresh.profiles.dto.UpdateWorkerProfileRequest;
 import com.ritualfresh.profiles.service.ProfileService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,12 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/profiles")
+@RequiredArgsConstructor
 public class ProfileController {
     private final ProfileService profileService;
-
-    public ProfileController(ProfileService profileService) {
-        this.profileService = profileService;
-    }
 
     @PostMapping("/clientes")
     @ResponseStatus(HttpStatus.CREATED)

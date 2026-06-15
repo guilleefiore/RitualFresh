@@ -18,6 +18,7 @@ import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.security.PasswordSecurity;
 import com.ritualfresh.auth.service.UserService;
+import com.ritualfresh.notifications.InMemoryAccountEmailService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class AdminServiceTest {
         SecurityContextHolder.clearContext();
         userRepository = new InMemoryUserRepository();
         userSessionRepository = new InMemoryUserSessionRepository();
-        userService = new UserService(userRepository, userSessionRepository);
+        userService = new UserService(userRepository, userSessionRepository, new InMemoryAccountEmailService());
         adminService = new AdminService(userService, userRepository);
     }
 
@@ -155,7 +156,8 @@ class AdminServiceTest {
                 PasswordSecurity.generateHash("admin123"),
                 UserRole.ADMIN,
                 LocalDateTime.now(),
-                "admin-token"));
+                "admin-token",
+                LocalDateTime.now().plusDays(1)));
         admin.validateAccount();
         userRepository.save(admin);
 

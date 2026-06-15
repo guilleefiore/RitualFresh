@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ritualfresh.shared.exception.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,14 +14,11 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
     private static final String DEFAULT_MESSAGE = "No posee permisos para acceder a esta funcionalidad.";
 
     private final ObjectMapper objectMapper;
-
-    public RestAccessDeniedHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public void handle(
