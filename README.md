@@ -210,7 +210,6 @@ classDiagram
     UserJpaRepository --> User : persiste
     UserSessionJpaRepository --> UserSession : persiste
 ```
-
 ## Diagrama de clases del módulo `profiles`
 
 Siguiendo el mismo criterio que en `auth`, en este diagrama se priorizan las clases de `model` y se agregan `controller`, `service` y `repository` para mostrar cómo se articula el módulo. Los DTOs también se omiten para conservar una vista más clara del flujo principal.
