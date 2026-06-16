@@ -21,15 +21,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+// Controlador REST para operaciones administrativas: usuarios y métricas
 public class AdminController {
     private final AdminService adminService;
 
+    // GET /api/admin/users - Lista todos los usuarios
     @GetMapping("/users")
     public List<AdminUserResponse> listUsers(Authentication authentication) {
         extractSessionToken(authentication);
         return adminService.listUsers();
     }
 
+    // GET /api/admin/users/{id} - Obtiene los datos de un usuario específico
     @GetMapping("/users/{id}")
     public AdminUserResponse getUser(
             Authentication authentication,
@@ -38,6 +41,7 @@ public class AdminController {
         return adminService.getUser(id);
     }
 
+    // PATCH /api/admin/users/{id}/status - Cambia el estado de cuenta de un usuario
     @PatchMapping("/users/{id}/status")
     public AdminUserResponse updateUserStatus(
             Authentication authentication,
@@ -47,6 +51,7 @@ public class AdminController {
         return adminService.updateUserStatus(id, request);
     }
 
+    // GET /api/admin/metrics - Obtiene estadísticas de usuarios
     @GetMapping("/metrics")
     @ResponseStatus(HttpStatus.OK)
     public AdminMetricsResponse getMetrics(Authentication authentication) {
@@ -54,6 +59,7 @@ public class AdminController {
         return adminService.getMetrics();
     }
 
+    // Extrae el token de sesión del contexto de autenticación
     private String extractSessionToken(Authentication authentication) {
         return authentication == null || authentication.getCredentials() == null
                 ? null

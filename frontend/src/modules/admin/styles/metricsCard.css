@@ -1,0 +1,118 @@
+.metrics-container {
+  margin-bottom: 3rem;
+}
+
+.metrics-container h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos específicos por tipo de métrica */
+.metric-card:nth-child(1) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.metric-card:nth-child(2) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.metric-card:nth-child(3) {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.metric-card:nth-child(4) {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.metric-card:nth-child(5) {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.metric-card:nth-child(6) {
+  background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+}
+
+.metric-card:nth-child(7) {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.metric-card:nth-child(8) {
+  background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);
+}
+
+.metric-active {
+  color: #28a745;
+}
+
+.metric-pending {
+  color: #ffc107;
+}
+
+.metric-suspended {
+  color: #dc3545;
+}
+
+.metric-deleted {
+  color: #6c757d;
+}
+
+.error-state {
+  background-color: #f8d7da;
+  padding: 1rem;
+  border-radius: 8px;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+@media (max-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .metric-card {
+    padding: 1rem;
+  }
+
+  .metric-value {
+    font-size: 2rem;
+  }
+}
