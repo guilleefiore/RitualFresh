@@ -355,3 +355,5 @@ classDiagram
     ClientProfileJpaRepository --> ClientProfile : persiste
     WorkerProfileJpaRepository --> WorkerProfile : persiste
 ```
+
+
