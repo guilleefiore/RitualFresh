@@ -8,6 +8,7 @@ import { ResendValidationPage } from '../modules/auth/pages/ResendValidationPage
 import { ClientHomePage } from '../modules/auth/pages/ClientHomePage.jsx';
 import { WorkerHomePage } from '../modules/auth/pages/WorkerHomePage.jsx';
 import { AdminHomePage } from '../modules/auth/pages/AdminHomePage.jsx';
+import { AdminUserDetailsPage } from '../modules/admin/pages/AdminUserDetailsPage.jsx';
 import { ProtectedRoute } from '../shared/guards/ProtectedRoute.jsx';
 import { useLocation } from 'react-router-dom';
 
@@ -39,6 +40,7 @@ export function AppRouter() {
 
       <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
         <Route path="/admin/home" element={<AdminHomePage />} />
+        <Route path="/admin/users/:userId" element={<AdminUserDetailsPage />} />
       </Route>
 
       <Route

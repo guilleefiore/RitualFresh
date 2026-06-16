@@ -1,5 +1,6 @@
-import { RoleHomePage } from './components/RoleHomePage.jsx';
+import { AdminDashboard } from '../../admin/pages/AdminDashboard.jsx';
+import '../../admin/styles/adminDashboard.css';
 
 export function AdminHomePage() {
-  return <RoleHomePage roleLabel="Administrador" title="Inicio de administrador" />;
+  return <AdminDashboard />;
 }
