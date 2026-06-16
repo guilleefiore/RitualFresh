@@ -18,29 +18,29 @@ import java.util.UUID;
 public class AdminBootstrapSeeder implements ApplicationRunner {
     // Repositorio para acceder a los datos de usuarios
     private final UserRepository userRepository;
-    
+    private final String firstName;
+    private final String lastName;
+    private final String documentNumber;
+    private final String phoneNumber;
+    private final String email;
+    private final String password;
     // Datos del administrador inicial obtenidos de la configuración
-    @Value("${ritualfresh.admin.bootstrap.first-name:}")
-    private String firstName;
-    
-    @Value("${ritualfresh.admin.bootstrap.last-name:}")
-    private String lastName;
-    
-    @Value("${ritualfresh.admin.bootstrap.document-number:}")
-    private String documentNumber;
-    
-    @Value("${ritualfresh.admin.bootstrap.phone-number:}")
-    private String phoneNumber;
-    
-    @Value("${ritualfresh.admin.bootstrap.email:}")
-    private String email;
-    
-    @Value("${ritualfresh.admin.bootstrap.password:}")
-    private String password;
-
-    // Constructor que inyecta el repositorio
-    public AdminBootstrapSeeder(UserRepository userRepository) {
+    // Constructor que inyecta el repositorio y los datos del administrador inicial
+    public AdminBootstrapSeeder(
+            UserRepository userRepository,
+            @Value("${ritualfresh.admin.bootstrap.first-name:}") String firstName,
+            @Value("${ritualfresh.admin.bootstrap.last-name:}") String lastName,
+            @Value("${ritualfresh.admin.bootstrap.document-number:}") String documentNumber,
+            @Value("${ritualfresh.admin.bootstrap.phone-number:}") String phoneNumber,
+            @Value("${ritualfresh.admin.bootstrap.email:}") String email,
+            @Value("${ritualfresh.admin.bootstrap.password:}") String password) {
         this.userRepository = userRepository;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.documentNumber = documentNumber;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.password = password;
     }
 
     // Se ejecuta automáticamente al iniciar la aplicación
