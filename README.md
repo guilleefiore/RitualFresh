@@ -29,6 +29,188 @@ La autenticación y autorización del backend se resuelven con Spring Security, 
 
 El modelo de datos general sigue sujeto a revisión para módulos posteriores, pero las entidades actuales de `auth`, `profiles` y `admin` ya se encuentran implementadas y probadas.
 
+## Diagrama de clases del módulo `auth`
+
+Para este módulo conviene priorizar las clases de `model`, pero también resulta útil mostrar cómo se conectan con `controller`, `service` y `repository`. En este primer diagrama se omiten los DTOs para no sobredimensionar la vista y preservar la legibilidad.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class User {
+        +Long id
+        +String firstName
+        +String lastName
+        +String documentNumber
+        +String phoneNumber
+        +String email
+        +String passwordHash
+        +UserRole role
+        +AccountStatus accountStatus
+        +LocalDateTime createdAt
+        +LocalDateTime deactivatedAt
+        +String accountValidationToken
+        +LocalDateTime accountValidationTokenExpiresAt
+        +String passwordResetToken
+        +LocalDateTime passwordResetTokenExpiresAt
+        +register(data) User
+        +validateAccount()
+        +startAccountValidation(token, expiresAt)
+        +hasValidAccountValidationToken(now) boolean
+        +editData(firstName, lastName, documentNumber, phoneNumber)
+        +changePassword(passwordHash)
+        +startPasswordReset(token, expiresAt)
+        +hasValidPasswordResetToken(now) boolean
+        +changeAccountStatus(accountStatus)
+        +deactivate()
+        +isActive() boolean
+    }
+
+    class UserSession {
+        +Long id
+        +String token
+        +LocalDateTime createdAt
+        +LocalDateTime expiresAt
+        +LocalDateTime closedAt
+        +isActive(now) boolean
+        +close(closedAt)
+    }
+
+    class UserRole {
+        <<enumeration>>
+        CLIENT
+        WORKER
+        ADMIN
+    }
+
+    class AccountStatus {
+        <<enumeration>>
+        PENDING_VALIDATION
+        ACTIVE
+        SUSPENDED
+        DELETED
+    }
+
+    class UserController {
+        +registerUser(request) RegisterUserApiResponse
+        +validateAccount(token) AccountValidationApiResponse
+        +resendAccountValidation(request) ResendAccountValidationApiResponse
+        +login(request, response) LoginApiResponse
+        +requestPasswordReset(request) PasswordResetApiResponse
+        +confirmPasswordReset(request) MessageApiResponse
+        +closeSession(authentication, response) MessageApiResponse
+        +deleteMyAccount(authentication, response) MessageApiResponse
+    }
+
+    class UserService {
+        +registerUser(request) RegisterUserResult
+        +validateAccount(token) User
+        +resendAccountValidation(email) void
+        +login(request) LoginResult
+        +getAuthenticatedUser(sessionToken) User
+        +closeSession(sessionToken) void
+        +deleteAuthenticatedAccount(sessionToken) void
+        +getAuthenticatedUser() User
+        +getAuthenticatedSessionToken() String
+        +requestPasswordReset(request) PasswordResetResult
+        +confirmPasswordReset(request) User
+    }
+
+    class UserRepository {
+        <<interface>>
+        +save(user) User
+        +findAll() List~User~
+        +findById(id) Optional~User~
+        +findByEmail(email) Optional~User~
+        +findByAccountValidationToken(token) Optional~User~
+        +findByPasswordResetToken(token) Optional~User~
+        +existsByEmail(email) boolean
+    }
+
+    class UserSessionRepository {
+        <<interface>>
+        +save(session) UserSession
+        +findByToken(token) Optional~UserSession~
+    }
+
+    class JpaUserRepository {
+        +save(user) User
+        +findAll() List~User~
+        +findById(id) Optional~User~
+        +findByEmail(email) Optional~User~
+        +findByAccountValidationToken(token) Optional~User~
+        +findByPasswordResetToken(token) Optional~User~
+        +existsByEmail(email) boolean
+    }
+
+    class JpaUserSessionRepository {
+        +save(session) UserSession
+        +findByToken(token) Optional~UserSession~
+    }
+
+    class InMemoryUserRepository {
+        +save(user) User
+        +findAll() List~User~
+        +findById(id) Optional~User~
+        +findByEmail(email) Optional~User~
+        +findByAccountValidationToken(token) Optional~User~
+        +findByPasswordResetToken(token) Optional~User~
+        +existsByEmail(email) boolean
+    }
+
+    class InMemoryUserSessionRepository {
+        +save(session) UserSession
+        +findByToken(token) Optional~UserSession~
+    }
+
+    class UserJpaRepository {
+        <<interface>>
+        +findByEmail(email) Optional~User~
+        +findByAccountValidationToken(token) Optional~User~
+        +findByPasswordResetToken(token) Optional~User~
+        +existsByEmail(email) boolean
+    }
+
+    class UserSessionJpaRepository {
+        <<interface>>
+        +findByToken(token) Optional~UserSession~
+    }
+
+    class AccountEmailService {
+        <<interface>>
+        +sendAccountValidationEmail(user, token, expiresAt) void
+        +sendPasswordResetEmail(user, token, expiresAt) void
+    }
+
+    class PasswordSecurity {
+        <<utility>>
+        +generateHash(password) String
+        +matches(rawPassword, passwordHash) boolean
+    }
+
+    User "1" --> "0..*" UserSession : mantiene
+    User --> UserRole : usa
+    User --> AccountStatus : usa
+
+    UserController ..> UserService : delega
+    UserService ..> UserRepository : usa
+    UserService ..> UserSessionRepository : usa
+    UserService ..> AccountEmailService : notifica
+    UserService ..> PasswordSecurity : cifra/valida
+    UserService ..> User : gestiona
+    UserService ..> UserSession : crea/cierra
+
+    UserRepository <|.. JpaUserRepository
+    UserRepository <|.. InMemoryUserRepository
+    UserSessionRepository <|.. JpaUserSessionRepository
+    UserSessionRepository <|.. InMemoryUserSessionRepository
+
+    JpaUserRepository ..> UserJpaRepository : adapta
+    JpaUserSessionRepository ..> UserSessionJpaRepository : adapta
+    UserJpaRepository --> User : persiste
+    UserSessionJpaRepository --> UserSession : persiste
+```
+
 ## Variables de entorno
 
 El backend usa `application.properties` solo para leer configuración, pero los valores sensibles deben venir de variables de entorno.
