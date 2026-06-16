@@ -356,22 +356,3 @@ classDiagram
     ClientProfileJpaRepository --> ClientProfile : persiste
     WorkerProfileJpaRepository --> WorkerProfile : persiste
 ```
-
-## Variables de entorno
-
-El backend usa `application.properties` solo para leer configuración, pero los valores sensibles deben venir de variables de entorno.
-
-- Para desarrollo con Docker Compose, conviene definirlas en un archivo `.env` en la raíz del proyecto.
-- El repositorio incluye [.env.example](/Users/guillermina/Downloads/4º%20año/primer%20semestre/seminario%20integrador/RitualFresh/.env.example:1) como plantilla.
-- `docker-compose.yml` toma esas variables y se las pasa al contenedor `backend`.
-
-Para el envío de correos con Mailtrap, completar al menos:
-
-- `RITUALFRESH_MAIL_ENABLED`
-- `RITUALFRESH_MAIL_FROM`
-- `RITUALFRESH_BACKEND_BASE_URL`
-- `RITUALFRESH_FRONTEND_BASE_URL`
-- `SPRING_MAIL_HOST`
-- `SPRING_MAIL_PORT`
-- `SPRING_MAIL_USERNAME`
-- `SPRING_MAIL_PASSWORD`
