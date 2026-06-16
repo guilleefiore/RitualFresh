@@ -4,7 +4,7 @@ import com.ritualfresh.auth.model.User;
 import com.ritualfresh.notifications.config.MailProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@ConditionalOnMissingBean(AccountEmailService.class)
+@ConditionalOnProperty(prefix = "ritualfresh.mail", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class LoggingAccountEmailService implements AccountEmailService {
     private final MailProperties mailProperties;
 
@@ -31,7 +31,7 @@ public class LoggingAccountEmailService implements AccountEmailService {
     @Override
     public void sendPasswordResetEmail(User user, String resetToken, LocalDateTime expiresAt) {
         log.info(
-                "Correo de recuperacion no enviado por SMTP. destinatario={}, enlace={}/reset-password?token={}, expira={}",
+                "Correo de recuperacion no enviado por SMTP. destinatario={}, enlace={}/password-reset/confirm?token={}, expira={}",
                 user.getEmail(),
                 mailProperties.getFrontendBaseUrl(),
                 resetToken,

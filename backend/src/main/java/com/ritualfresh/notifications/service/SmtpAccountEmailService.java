@@ -75,6 +75,6 @@ public class SmtpAccountEmailService implements AccountEmailService {
     }
 
     private String buildPasswordResetUrl(String token) {
-        return mailProperties.getFrontendBaseUrl() + "/reset-password?token=" + token;
+        return mailProperties.getFrontendBaseUrl() + "/password-reset/confirm?token=" + token;
     }
 }
