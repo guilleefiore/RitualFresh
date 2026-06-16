@@ -1,6 +1,5 @@
 package com.ritualfresh.admin.service;
 
-import com.ritualfresh.admin.dto.AdminAccountStatus;
 import com.ritualfresh.admin.dto.AdminMetricsResponse;
 import com.ritualfresh.admin.dto.AdminUserResponse;
 import com.ritualfresh.admin.dto.AdminUserStatusRequest;
@@ -20,10 +19,12 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// Servicio que gestiona operaciones administrativas: listar usuarios, cambiar estados, obtener métricas
 public class AdminService {
     private final UserService userService;
     private final UserRepository userRepository;
 
+    // Obtiene todos los usuarios ordenados por ID
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public List<AdminUserResponse> listUsers() {
@@ -35,6 +36,7 @@ public class AdminService {
                 .toList();
     }
 
+    // Obtiene los datos de un usuario específico por ID
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public AdminUserResponse getUser(Long userId) {
@@ -43,11 +45,11 @@ public class AdminService {
         return AdminUserResponse.from(findUserById(userId));
     }
 
+    // Cambia el estado de cuenta de un usuario (validando transiciones permitidas)
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public AdminUserResponse updateUserStatus(Long userId, AdminUserStatusRequest request) {
         User actor = requireAdmin();
-        validateStatusRequest(request);
 
         User user = findUserById(userId);
         AccountStatus newStatus = request.status().toAccountStatus();
@@ -58,6 +60,7 @@ public class AdminService {
         return AdminUserResponse.from(user);
     }
 
+    // Obtiene estadísticas de usuarios: total, por rol y por estado
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public AdminMetricsResponse getMetrics() {
@@ -76,6 +79,7 @@ public class AdminService {
                 countByStatus(users, AccountStatus.DELETED));
     }
 
+    // Valida que el usuario autenticado sea administrador
     private User requireAdmin() {
         User user = userService.getAuthenticatedUser();
         if (user.getRole() != UserRole.ADMIN) {
@@ -85,6 +89,7 @@ public class AdminService {
         return user;
     }
 
+    // Obtiene un usuario por ID, lanza excepción si no existe
     private User findUserById(Long userId) {
         if (userId == null) {
             throw new BusinessRuleException("El usuario no existe.");
@@ -94,12 +99,7 @@ public class AdminService {
                 .orElseThrow(() -> new BusinessRuleException("El usuario no existe."));
     }
 
-    private void validateStatusRequest(AdminUserStatusRequest request) {
-        if (request == null || request.status() == null) {
-            throw new BusinessRuleException("Debe completar el estado de la cuenta.");
-        }
-    }
-
+    // Valida que la transición de estado sea permitida y que no se suspenda/elimine a sí mismo
     private void validateStatusTransition(User actor, User target, AccountStatus newStatus) {
         if (target.getId().equals(actor.getId())
                 && (newStatus == AccountStatus.SUSPENDED || newStatus == AccountStatus.DELETED)) {
@@ -111,6 +111,7 @@ public class AdminService {
         }
     }
 
+    // Define las transiciones de estado permitidas según el estado actual
     private boolean isAllowedTransition(AccountStatus currentStatus, AccountStatus newStatus) {
         return switch (currentStatus) {
             case ACTIVE -> newStatus == AccountStatus.ACTIVE
@@ -127,10 +128,12 @@ public class AdminService {
         };
     }
 
+    // Cuenta usuarios por rol
     private long countByRole(List<User> users, UserRole role) {
         return users.stream().filter(user -> user.getRole() == role).count();
     }
 
+    // Cuenta usuarios por estado de cuenta
     private long countByStatus(List<User> users, AccountStatus status) {
         return users.stream().filter(user -> user.getAccountStatus() == status).count();
     }
