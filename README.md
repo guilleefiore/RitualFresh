@@ -211,6 +211,152 @@ classDiagram
     UserSessionJpaRepository --> UserSession : persiste
 ```
 
+## Diagrama de clases del módulo `profiles`
+
+Siguiendo el mismo criterio que en `auth`, en este diagrama se priorizan las clases de `model` y se agregan `controller`, `service` y `repository` para mostrar cómo se articula el módulo. Los DTOs también se omiten para conservar una vista más clara del flujo principal.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class User {
+        +Long id
+        +UserRole role
+        +isActive() boolean
+    }
+
+    class ClientProfile {
+        +Long id
+        +String photoUrl
+        +int clientRating
+        +String contactPhone
+        +String streetName
+        +String streetNumber
+        +String floor
+        +String apartment
+        +String postalCode
+        +String city
+        +String province
+        +String hiringPreferences
+        +edit(photoUrl, contactPhone, streetName, streetNumber, floor, apartment, postalCode, city, province, hiringPreferences)
+    }
+
+    class WorkerProfile {
+        +Long id
+        +String photoUrl
+        +int rankingPosition
+        +String description
+        +int yearsOfExperience
+        +String offeredServices
+        +String workArea
+        +String availability
+        +BigDecimal hourlyRate
+        +edit(photoUrl, description, yearsOfExperience, offeredServices, workArea, availability, hourlyRate)
+    }
+
+    class ProfileType {
+        <<enumeration>>
+        CLIENT
+        WORKER
+    }
+
+    class ProfileController {
+        +createClientProfile(authentication, request) ProfileOperationApiResponse
+        +createWorkerProfile(authentication, request) ProfileOperationApiResponse
+        +getMyProfile(authentication) ProfileApiResponse
+        +updateClientProfile(authentication, request) ProfileOperationApiResponse
+        +updateWorkerProfile(authentication, request) ProfileOperationApiResponse
+    }
+
+    class ProfileService {
+        +createClientProfile(request) UserProfileResult
+        +createWorkerProfile(request) UserProfileResult
+        +getMyProfile() UserProfileResult
+        +updateClientProfile(request) UserProfileResult
+        +updateWorkerProfile(request) UserProfileResult
+    }
+
+    class UserService {
+        +getAuthenticatedUser() User
+    }
+
+    class ClientProfileRepository {
+        <<interface>>
+        +save(profile) ClientProfile
+        +findByUserId(userId) Optional~ClientProfile~
+        +existsByUserId(userId) boolean
+    }
+
+    class WorkerProfileRepository {
+        <<interface>>
+        +save(profile) WorkerProfile
+        +findByUserId(userId) Optional~WorkerProfile~
+        +existsByUserId(userId) boolean
+    }
+
+    class JpaClientProfileRepository {
+        +save(profile) ClientProfile
+        +findByUserId(userId) Optional~ClientProfile~
+        +existsByUserId(userId) boolean
+    }
+
+    class JpaWorkerProfileRepository {
+        +save(profile) WorkerProfile
+        +findByUserId(userId) Optional~WorkerProfile~
+        +existsByUserId(userId) boolean
+    }
+
+    class InMemoryClientProfileRepository {
+        +save(profile) ClientProfile
+        +findByUserId(userId) Optional~ClientProfile~
+        +existsByUserId(userId) boolean
+    }
+
+    class InMemoryWorkerProfileRepository {
+        +save(profile) WorkerProfile
+        +findByUserId(userId) Optional~WorkerProfile~
+        +existsByUserId(userId) boolean
+    }
+
+    class ClientProfileJpaRepository {
+        <<interface>>
+        +findByUser_Id(userId) Optional~ClientProfile~
+        +existsByUser_Id(userId) boolean
+    }
+
+    class WorkerProfileJpaRepository {
+        <<interface>>
+        +findByUser_Id(userId) Optional~WorkerProfile~
+        +existsByUser_Id(userId) boolean
+    }
+
+    User "1" --> "0..1" ClientProfile : posee
+    User "1" --> "0..1" WorkerProfile : posee
+    User --> UserRole : usa
+    ClientProfile --> User : pertenece a
+    WorkerProfile --> User : pertenece a
+    ClientProfile --> ProfileType : representa CLIENT
+    WorkerProfile --> ProfileType : representa WORKER
+
+    ProfileController ..> ProfileService : delega
+    ProfileService ..> UserService : obtiene usuario autenticado
+    ProfileService ..> ClientProfileRepository : usa
+    ProfileService ..> WorkerProfileRepository : usa
+    ProfileService ..> User : valida rol y ownership
+    ProfileService ..> ClientProfile : crea/edita
+    ProfileService ..> WorkerProfile : crea/edita
+
+    ClientProfileRepository <|.. JpaClientProfileRepository
+    ClientProfileRepository <|.. InMemoryClientProfileRepository
+    WorkerProfileRepository <|.. JpaWorkerProfileRepository
+    WorkerProfileRepository <|.. InMemoryWorkerProfileRepository
+
+    JpaClientProfileRepository ..> ClientProfileJpaRepository : adapta
+    JpaWorkerProfileRepository ..> WorkerProfileJpaRepository : adapta
+    ClientProfileJpaRepository --> ClientProfile : persiste
+    WorkerProfileJpaRepository --> WorkerProfile : persiste
+```
+
 ## Variables de entorno
 
 El backend usa `application.properties` solo para leer configuración, pero los valores sensibles deben venir de variables de entorno.
