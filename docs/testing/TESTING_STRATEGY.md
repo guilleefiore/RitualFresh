@@ -55,7 +55,7 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
 
 ##### Prerrequisitos
 
-- Backend levantado con `docker compose up --build`.
+- Base de datos levantada con `docker compose up -d postgres` o stack completo con `docker compose up --build`.
 - Archivo `.env` completo con credenciales válidas de Mailtrap.
 - Sandbox de Mailtrap accesible para revisar correos enviados.
 
@@ -144,6 +144,35 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
     - Verifica cierre de sesión y rechazo posterior del mismo token.
 17. `GET /api/admin/users`
     - Verifica acceso sólo con usuario `ADMIN`.
+
+##### Prueba manual frontend del módulo `profiles`
+
+Flujo recomendado para validar la pantalla implementada en React:
+
+1. Levantar frontend con `cd frontend && npm run dev`.
+2. Abrir `http://localhost:5173`.
+3. Registrar y autenticar un usuario `CLIENT` o `WORKER`.
+4. Ingresar al home del rol y seleccionar `Ir a mi perfil`.
+5. Verificar que la ruta sea `/profiles`.
+6. Si es la primera vez:
+   - verificar que el formulario aparezca vacío;
+   - completar datos válidos;
+   - guardar y confirmar mensaje de éxito.
+7. Reingresar a `/profiles`.
+   - verificar que los datos previos se carguen automáticamente;
+   - verificar que el botón quede en modo edición;
+   - modificar al menos un campo y guardar nuevamente.
+8. Confirmar que el resumen inferior refleje el último estado persistido.
+9. Validar el control por rol:
+   - `CLIENT` debe ver campos de contacto, domicilio y preferencias;
+   - `WORKER` debe ver campos de descripción profesional, experiencia, servicios, disponibilidad y precio.
+10. Validar error esperado:
+   - intentar guardar con campos obligatorios vacíos;
+   - verificar que el frontend o el backend informen el error sin romper la pantalla.
+
+Observación actual conocida:
+
+- Si se refresca la página completa, el frontend todavía no rehidrata la sesión desde la cookie. En ese caso puede requerirse iniciar sesión nuevamente para continuar probando.
 
 Configuración mínima sugerida:
 

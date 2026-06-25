@@ -1,0 +1,115 @@
+@import '../../../styles/variables.css';
+
+.profile-screen {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.profile-hero {
+  display: grid;
+  gap: var(--space-5);
+  padding: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.profile-hero h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  line-height: 0.95;
+}
+
+.profile-summary-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  border: 1px solid rgba(45, 106, 79, 0.16);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(217, 239, 226, 0.82));
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-summary-card h2,
+.profile-card__header h2,
+.profile-details h3 {
+  margin: 0;
+}
+
+.profile-summary-card p {
+  margin: 0;
+}
+
+.profile-summary-card__label {
+  color: var(--color-accent-strong);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-card {
+  width: 100%;
+  display: grid;
+  gap: var(--space-5);
+}
+
+.profile-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.profile-badge--ready {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.profile-badge--draft {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.profile-details {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.profile-details__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.profile-details__grid dt {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.profile-details__grid dd {
+  margin: var(--space-1) 0 0;
+  font-weight: 700;
+}
+
+@media (max-width: 920px) {
+  .profile-screen,
+  .profile-details__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-card__header {
+    flex-direction: column;
+  }
+}

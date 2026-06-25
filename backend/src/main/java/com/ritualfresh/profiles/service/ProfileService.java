@@ -33,6 +33,7 @@ public class ProfileService {
     private final ClientProfileRepository clientProfileRepository;
     private final WorkerProfileRepository workerProfileRepository;
 
+    // Crea un perfil de cliente para el usuario autenticado.
     @PreAuthorize("hasRole('CLIENT')")
     @Transactional
     public UserProfileResult createClientProfile(CreateClientProfileRequest request) {
@@ -57,6 +58,7 @@ public class ProfileService {
         return UserProfileResult.from(clientProfileRepository.save(profile));
     }
 
+    // Crea un perfil de trabajador para el usuario autenticado.
     @PreAuthorize("hasRole('WORKER')")
     @Transactional
     public UserProfileResult createWorkerProfile(CreateWorkerProfileRequest request) {
@@ -78,6 +80,7 @@ public class ProfileService {
         return UserProfileResult.from(workerProfileRepository.save(profile));
     }
 
+    // Devuelve el perfil asociado al usuario autenticado.
     @PreAuthorize("isAuthenticated()")
     @Transactional(readOnly = true)
     public UserProfileResult getMyProfile() {
@@ -90,6 +93,7 @@ public class ProfileService {
                 .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil creado."));
     }
 
+    // Actualiza los datos del perfil de cliente del usuario autenticado.
     @PreAuthorize("hasRole('CLIENT')")
     @Transactional
     public UserProfileResult updateClientProfile(UpdateClientProfileRequest request) {
@@ -117,6 +121,7 @@ public class ProfileService {
         return UserProfileResult.from(clientProfileRepository.save(profile));
     }
 
+    // Actualiza los datos del perfil de trabajador del usuario autenticado.
     @PreAuthorize("hasRole('WORKER')")
     @Transactional
     public UserProfileResult updateWorkerProfile(UpdateWorkerProfileRequest request) {
@@ -153,12 +158,14 @@ public class ProfileService {
         }
     }
 
+    // Verifica que el usuario tenga el rol esperado para la operación.
     private void validateRole(User user, UserRole expectedRole, String message) {
         if (user.getRole() != expectedRole) {
             throw new BusinessRuleException(message);
         }
     }
 
+    // Evita que un usuario cree más de un perfil.
     private void validateUserWithoutProfile(Long userId) {
         if (clientProfileRepository.existsByUserId(userId)
                 || workerProfileRepository.existsByUserId(userId)) {

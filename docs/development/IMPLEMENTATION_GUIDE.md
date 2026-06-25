@@ -53,7 +53,8 @@ Cada módulo puede contener, como mínimo, `controller`, `service`, `repository`
 
 - La autenticación se resuelve con Spring Security.
 - El sistema no utiliza JWT ni `HttpSession`.
-- El frontend envía `Authorization: Bearer <sessionToken>`.
+- El frontend utiliza cookie `HttpOnly` y `fetch(..., { credentials: 'include' })` como mecanismo principal de sesión.
+- El backend mantiene compatibilidad técnica con `Authorization: Bearer <sessionToken>` para pruebas y debugging.
 - El `sessionToken` se persiste en `user_sessions` y se valida mediante un filtro de seguridad.
 - Las respuestas `401` y `403` se devuelven en JSON consistente con el resto de la API.
 
@@ -119,19 +120,48 @@ shared/
 frontend/src/
 ├── app/
 │   ├── App.jsx
+│   ├── providers.jsx
 │   └── router.jsx
 ├── modules/
 │   ├── auth/
+│   ├── admin/
 │   ├── profiles/
 │   ├── search/
 │   └── contracts/
 ├── shared/
 │   ├── components/
-│   ├── services/
-│   ├── constants/
-│   └── styles/
+│   ├── guards/
+│   └── services/
+├── styles/
+│   ├── globals.css
+│   └── variables.css
 └── main.jsx
 ```
+
+### Estado actual del frontend
+
+- `app/router.jsx` centraliza las rutas públicas y protegidas.
+- `modules/auth` contiene login, registro, validación, recuperación y pantallas home mínimas por rol.
+- `modules/admin` concentra el dashboard administrativo y la gestión inicial de usuarios.
+- `modules/profiles` ya implementa un flujo vertical mínimo para `M02`.
+
+### Flujo actual del módulo `profiles`
+
+- Ruta protegida: `/profiles`.
+- Roles habilitados: `CLIENT` y `WORKER`.
+- Comportamiento:
+  - al ingresar, la pantalla consulta `GET /api/profiles/me`;
+  - si el backend responde que el usuario aún no tiene perfil, se muestra formulario de alta;
+  - si el perfil ya existe, se cargan los datos actuales y la pantalla pasa a modo edición.
+- Servicios frontend involucrados:
+  - `GET /api/profiles/me`
+  - `POST /api/profiles/clientes`
+  - `PUT /api/profiles/clientes/me`
+  - `POST /api/profiles/trabajadores`
+  - `PUT /api/profiles/trabajadores/me`
+- Entrada de navegación actual:
+  - `CLIENT`: desde `/client/home` mediante el botón `Ir a mi perfil`;
+  - `WORKER`: desde `/worker/home` mediante el botón `Ir a mi perfil`.
 
 ## Reglas de implementación frontend
 
@@ -142,6 +172,7 @@ frontend/src/
 - Respetar guía visual.
 - No duplicar lógica de filtros o formateo.
 - Mantener nombres de rutas y componentes consistentes con módulos.
+- Si un módulo depende del rol autenticado, resolver la variante visual dentro de la misma pantalla sólo cuando comparta el mismo caso de uso, como ocurre actualmente con `/profiles`.
 
 ## Convenciones de nombres
 

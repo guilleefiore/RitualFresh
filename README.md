@@ -25,7 +25,14 @@ El proyecto ya cuenta con una base backend funcional para:
 - `M02`: creación, consulta y actualización de perfiles de cliente y trabajador.
 - administración mínima: listado de usuarios, detalle, cambio de estado y métricas básicas.
 
-La autenticación y autorización del backend se resuelven con Spring Security, manteniendo el modelo actual de `UserSession` y el uso de `Authorization: Bearer <sessionToken>`.
+En frontend ya se encuentran implementados los flujos base para:
+
+- autenticación, validación y recuperación de contraseña;
+- dashboard mínimo por rol;
+- panel administrativo inicial;
+- gestión de perfil propio para `CLIENT` y `WORKER` en la ruta protegida `/profiles`.
+
+La autenticación y autorización del backend se resuelven con Spring Security, manteniendo el modelo actual de `UserSession`. El transporte principal de sesión entre frontend y backend se realiza mediante cookie `HttpOnly`, aunque el backend todavía conserva compatibilidad técnica con `Authorization: Bearer <sessionToken>` para pruebas y debugging.
 
 El modelo de datos general sigue sujeto a revisión para módulos posteriores, pero las entidades actuales de `auth`, `profiles` y `admin` ya se encuentran implementadas y probadas.
 
@@ -355,5 +362,4 @@ classDiagram
     ClientProfileJpaRepository --> ClientProfile : persiste
     WorkerProfileJpaRepository --> WorkerProfile : persiste
 ```
-
 

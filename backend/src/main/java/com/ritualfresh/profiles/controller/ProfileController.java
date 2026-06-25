@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProfileController {
     private final ProfileService profileService;
 
+    // Crea un perfil de cliente a partir de los datos enviados por el usuario.
     @PostMapping("/clientes")
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileOperationApiResponse createClientProfile(
@@ -50,6 +51,7 @@ public class ProfileController {
         return new ProfileOperationApiResponse("Profile de cliente creado correctamente.", profile);
     }
 
+    // Crea un perfil de trabajador a partir de los datos enviados por el usuario.
     @PostMapping("/trabajadores")
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileOperationApiResponse createWorkerProfile(
@@ -68,12 +70,14 @@ public class ProfileController {
         return new ProfileOperationApiResponse("Profile de trabajador creado correctamente.", profile);
     }
 
+    // Devuelve el perfil actual del usuario autenticado.
     @GetMapping("/me")
     public ProfileApiResponse getMyProfile(Authentication authentication) {
         extractSessionToken(authentication);
         return ProfileApiResponse.from(profileService.getMyProfile());
     }
 
+    // Actualiza el perfil de cliente del usuario autenticado.
     @PutMapping("/clientes/me")
     public ProfileOperationApiResponse updateClientProfile(
             Authentication authentication,
@@ -94,6 +98,7 @@ public class ProfileController {
         return new ProfileOperationApiResponse("Profile de cliente actualizado correctamente.", profile);
     }
 
+    // Actualiza el perfil de trabajador del usuario autenticado.
     @PutMapping("/trabajadores/me")
     public ProfileOperationApiResponse updateWorkerProfile(
             Authentication authentication,

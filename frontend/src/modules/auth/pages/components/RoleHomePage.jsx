@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.js';
 
 export function RoleHomePage({ roleLabel, title }) {
@@ -79,6 +79,11 @@ export function RoleHomePage({ roleLabel, title }) {
         {errorMessage ? <p className="feedback feedback--error">{errorMessage}</p> : null}
 
         <div className="dashboard-actions">
+          {(user?.role === 'CLIENT' || user?.role === 'WORKER') ? (
+            <Link className="button button--ghost" to="/profiles">
+              Ir a mi perfil
+            </Link>
+          ) : null}
           <button className="button button--primary" type="button" onClick={handleLogout} disabled={busyAction === 'logout'}>
             {busyAction === 'logout' ? 'Cerrando...' : 'Cerrar sesión'}
           </button>
