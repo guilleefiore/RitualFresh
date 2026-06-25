@@ -9,6 +9,7 @@ import { ClientHomePage } from '../modules/auth/pages/ClientHomePage.jsx';
 import { WorkerHomePage } from '../modules/auth/pages/WorkerHomePage.jsx';
 import { AdminHomePage } from '../modules/auth/pages/AdminHomePage.jsx';
 import { AdminUserDetailsPage } from '../modules/admin/pages/AdminUserDetailsPage.jsx';
+import { ProfilesPage } from '../modules/profiles/pages/ProfilesPage.jsx';
 import { ProtectedRoute } from '../shared/guards/ProtectedRoute.jsx';
 import { useLocation } from 'react-router-dom';
 
@@ -36,6 +37,10 @@ export function AppRouter() {
 
       <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
         <Route path="/worker/home" element={<WorkerHomePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['CLIENT', 'WORKER']} />}>
+        <Route path="/profiles" element={<ProfilesPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>

@@ -49,6 +49,10 @@
 - Registro exitoso → Inicio de sesión o pantalla de bienvenida.
 - Inicio de sesión cliente → Inicio cliente.
 - Inicio de sesión trabajador → Inicio trabajador.
+- Inicio cliente → Mi perfil (`/profiles`).
+- Inicio trabajador → Mi perfil profesional (`/profiles`).
+- Mi perfil sin datos previos → Alta inicial del perfil correspondiente al rol.
+- Mi perfil con datos existentes → Edición del perfil correspondiente al rol.
 - Búsqueda → Resultados → Detalle de trabajador → Solicitud de contratación.
 - Solicitud aceptada → Pago.
 - Pago aprobado → Contratación confirmada.
@@ -60,3 +64,10 @@
 - Cliente: búsqueda, solicitud, pago, historial, calificaciones, estadísticas de cliente.
 - Trabajador: perfil profesional, solicitudes, contrataciones asignadas, estadísticas de trabajador, datos de cobro.
 - Administrador: reportes, gestión de usuarios, reclamos y configuración.
+
+## Implementación frontend actual de perfiles
+
+- La ruta protegida compartida es `/profiles`.
+- `CLIENT` visualiza y completa datos de contacto, domicilio y preferencias de contratación.
+- `WORKER` visualiza y completa descripción profesional, experiencia, servicios, zona, disponibilidad y precio orientativo.
+- La misma pantalla resuelve alta o edición según la respuesta de `GET /api/profiles/me`.
