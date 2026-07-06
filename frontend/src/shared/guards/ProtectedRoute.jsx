@@ -3,7 +3,11 @@ import { useAuth } from '../../modules/auth/hooks/useAuth.js';
 
 export function ProtectedRoute({ allowedRoles = [] }) {
   const location = useLocation();
-  const { user, role } = useAuth();
+  const { user, role, isAuthReady } = useAuth();
+
+  if (!isAuthReady) {
+    return null;
+  }
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from '../modules/auth/pages/LoginPage.jsx';
 import { RegisterPage } from '../modules/auth/pages/RegisterPage.jsx';
+import { ChooseRolePage } from '../modules/auth/pages/ChooseRolePage.jsx';
 import { PasswordResetPage } from '../modules/auth/pages/PasswordResetPage.jsx';
 import { ConfirmPasswordResetPage } from '../modules/auth/pages/ConfirmPasswordResetPage.jsx';
 import { AccountValidationPage } from '../modules/auth/pages/AccountValidationPage.jsx';
@@ -37,6 +38,10 @@ export function AppRouter() {
 
       <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
         <Route path="/worker/home" element={<WorkerHomePage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
+        <Route path="/choose-role" element={<ChooseRolePage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['CLIENT', 'WORKER']} />}>

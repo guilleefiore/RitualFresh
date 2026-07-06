@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { UsersList } from '../components/UsersList.jsx';
 import { MetricsCard } from '../components/MetricsCard.jsx';
 import { useAdminUsers, useAdminMetrics } from '../hooks/useAdminData.js';
 
 export function AdminDashboard() {
-  const { users, isLoading: usersLoading, error: usersError } = useAdminUsers();
-  const { metrics, isLoading: metricsLoading, error: metricsError } = useAdminMetrics();
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const { users, isLoading: usersLoading, error: usersError } = useAdminUsers(refetchTrigger);
+  const { metrics, isLoading: metricsLoading, error: metricsError } = useAdminMetrics(refetchTrigger);
 
   const handleUserUpdated = () => {
     setRefetchTrigger((prev) => prev + 1);
@@ -29,9 +28,6 @@ export function AdminDashboard() {
       <section className="admin-users-section">
         <div className="section-header">
           <h2>Gestión de Usuarios</h2>
-          <Link to="/admin/users" className="btn btn-primary">
-            Ver todos los usuarios
-          </Link>
         </div>
 
         {usersLoading && <p>Cargando usuarios...</p>}

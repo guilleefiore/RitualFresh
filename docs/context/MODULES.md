@@ -2,14 +2,17 @@
 
 ## M01 - Gestión de Usuarios y Autenticación
 
-Gestiona registro, validación de cuenta, inicio de sesión, recuperación de contraseña, roles y acceso al sistema.
+Gestiona registro, validación de cuenta, inicio de sesión (incluyendo login social con Google), recuperación de contraseña, roles y acceso al sistema.
 
 Estado actual de implementación backend:
 
 - registro público para `CLIENT` y `WORKER`
 - validación de cuenta mediante token
-- login con `sessionToken`
+- reenvío público del enlace de validación
+- login con sesión opaca persistida y cookie `HttpOnly` como transporte principal
+- login con Google (OAuth 2.0)
 - logout
+- autoeliminación lógica de la cuenta autenticada
 - recuperación de contraseña
 - Spring Security con sesión opaca persistida en `user_sessions`
 
@@ -146,5 +149,7 @@ Aunque todavía no existe un módulo funcional completo de reclamos o moderació
 - detalle de usuario
 - cambio de estado de cuenta
 - métricas básicas agregadas
+
+En frontend, este soporte hoy se consume desde `/admin/home` y `/admin/users/:userId`.
 
 Este soporte se expone bajo `/api/admin/**` y requiere rol `ADMIN`.

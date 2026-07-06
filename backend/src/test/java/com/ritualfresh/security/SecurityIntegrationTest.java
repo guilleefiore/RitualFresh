@@ -174,8 +174,6 @@ class SecurityIntegrationTest {
         User user = User.register(new User.RegistrationData(
                 "Cookie",
                 "User",
-                "55555555",
-                "2611234567",
                 "cookie.user@example.com",
                 com.ritualfresh.auth.security.PasswordSecurity.generateHash("clave123"),
                 UserRole.CLIENT,
@@ -208,12 +206,44 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void currentSessionEndpointReturnsAuthenticatedUserData() throws Exception {
+        User user = User.register(new User.RegistrationData(
+                "Session",
+                "User",
+                "session.user@example.com",
+                com.ritualfresh.auth.security.PasswordSecurity.generateHash("Clave123"),
+                UserRole.CLIENT,
+                LocalDateTime.now().minusHours(1),
+                "validation-token-session",
+                LocalDateTime.now().plusDays(1)));
+        user.validateAccount();
+        userRepository.save(user);
+
+        MvcResult loginResult = mockMvc.perform(post("/api/users/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "session.user@example.com",
+                                  "password": "Clave123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String sessionCookieValue = extractCookieValue(loginResult.getResponse().getHeader("Set-Cookie"));
+
+        mockMvc.perform(get("/api/users/me")
+                        .cookie(new jakarta.servlet.http.Cookie("RITUALFRESH_SESSION", sessionCookieValue)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Sesion activa."))
+                .andExpect(jsonPath("$.user.email").value("session.user@example.com"));
+    }
+
+    @Test
     void authenticatedUserCanDeleteOwnAccountAndCookieIsExpired() throws Exception {
         User user = User.register(new User.RegistrationData(
                 "Delete",
                 "User",
-                "66666666",
-                "2617654321",
                 "delete.user@example.com",
                 com.ritualfresh.auth.security.PasswordSecurity.generateHash("clave123"),
                 UserRole.CLIENT,
@@ -259,8 +289,6 @@ class SecurityIntegrationTest {
         User user = User.register(new User.RegistrationData(
                 "Pending",
                 "User",
-                "77777777",
-                "2619988776",
                 "pending.user@example.com",
                 com.ritualfresh.auth.security.PasswordSecurity.generateHash("clave123"),
                 UserRole.CLIENT,
@@ -288,8 +316,6 @@ class SecurityIntegrationTest {
         User user = User.register(new User.RegistrationData(
                 "Test",
                 "User",
-                token.hashCode() + "",
-                "2610000000",
                 token + "@example.com",
                 "hash",
                 role,

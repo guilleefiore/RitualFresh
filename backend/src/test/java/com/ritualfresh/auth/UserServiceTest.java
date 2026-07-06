@@ -3,6 +3,7 @@ package com.ritualfresh.auth;
 import com.ritualfresh.auth.dto.ConfirmPasswordResetRequest;
 import com.ritualfresh.auth.dto.LoginRequest;
 import com.ritualfresh.auth.dto.LoginResult;
+import com.ritualfresh.auth.dto.OAuth2ProfileData;
 import com.ritualfresh.auth.dto.PasswordResetRequest;
 import com.ritualfresh.auth.dto.PasswordResetResult;
 import com.ritualfresh.auth.dto.RegisterUserRequest;
@@ -59,17 +60,67 @@ class UserServiceTest {
     }
 
     @Test
+    void us01M01Rf01AcceptsArgentineDniWithDotsAndStoresItNormalized() {
+        RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
+                "Guillermina",
+                "Fiore",
+                "guillermina.dni@example.com",
+                "Clave123",
+                "Clave123",
+                UserRole.CLIENT));
+
+        assertEquals("44984633", result.user().getDocumentNumber());
+    }
+
+    @Test
+    void us01M01Rf01RejectsInvalidArgentineDniFormat() {
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
+                "Guillermina",
+                "Fiore",
+                "guillermina.dni.invalido@example.com",
+                "Clave123",
+                "Clave123",
+                UserRole.CLIENT)));
+
+        assertEquals("El DNI debe tener formato argentino valido, con o sin puntos.", exception.getMessage());
+    }
+
+    @Test
+    void us01M01Rf01RejectsInvalidPhoneNumberFormat() {
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
+                "Guillermina",
+                "Fiore",
+                "guillermina.telefono@example.com",
+                "Clave123",
+                "Clave123",
+                UserRole.CLIENT)));
+
+        assertEquals("El telefono ingresado no posee un formato valido.", exception.getMessage());
+    }
+
+    @Test
+    void us01M01Rf01RejectsWeakPassword() {
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
+                "Guillermina",
+                "Fiore",
+                "guillermina.password@example.com",
+                "clave",
+                "clave",
+                UserRole.CLIENT)));
+
+        assertEquals("La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero.", exception.getMessage());
+    }
+
+    @Test
     void us01M01Rf01PreventsRegisteringAnExistingEmail() {
         registerClient();
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
                 "Otra",
                 "Persona",
-                "87654321",
-                "2611111111",
                 "guillermina@example.com",
-                "clave123",
-                "clave123",
+                "Clave123",
+                "Clave123",
                 UserRole.WORKER)));
 
         assertEquals("El correo ya se encuentra registrado.", exception.getMessage());
@@ -80,11 +131,9 @@ class UserServiceTest {
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
                 "Guillermina",
                 "Fiore",
-                "12345678",
-                "2610000000",
                 "guillermina@example.com",
-                "clave123",
-                "otraClave",
+                "Clave123",
+                "OtraClave123",
                 UserRole.CLIENT)));
 
         assertEquals("Las contrasenas no coinciden.", exception.getMessage());
@@ -96,7 +145,7 @@ class UserServiceTest {
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.login(new LoginRequest(
                 "guillermina@example.com",
-                "clave123")));
+                "Clave123")));
 
         assertEquals("Debe validar su cuenta antes de iniciar sesion.", exception.getMessage());
     }
@@ -108,7 +157,7 @@ class UserServiceTest {
 
         LoginResult loginResult = userService.login(new LoginRequest(
                 "guillermina@example.com",
-                "clave123"));
+                "Clave123"));
         User authenticatedUser = userService.getAuthenticatedUser(loginResult.sessionToken());
 
         assertEquals(AccountStatus.ACTIVE, validatedUser.getAccountStatus());
@@ -128,6 +177,37 @@ class UserServiceTest {
                 "incorrecta")));
 
         assertEquals("El correo o la contrasena son incorrectos.", exception.getMessage());
+    }
+
+    @Test
+    void us02M01Rf02CreatesGoogleAccountWithActiveSession() {
+        LoginResult loginResult = userService.loginWithGoogle(new OAuth2ProfileData(
+                "google.client@example.com",
+                "Guillermina",
+                "Fiore"));
+
+        User user = userRepository.findByEmail("google.client@example.com").orElseThrow();
+
+        assertEquals(AccountStatus.ACTIVE, user.getAccountStatus());
+        assertEquals(UserRole.CLIENT, user.getRole());
+        assertNotNull(loginResult.sessionToken());
+        assertNotNull(loginResult.sessionExpiresAt());
+    }
+
+    @Test
+    void us02M01Rf02ReusesPendingAccountWhenLoggingInWithGoogle() {
+        RegisterUserResult result = registerClient();
+
+        LoginResult loginResult = userService.loginWithGoogle(new OAuth2ProfileData(
+                "guillermina@example.com",
+                "Guillermina",
+                "Fiore"));
+
+        User user = userRepository.findByEmail("guillermina@example.com").orElseThrow();
+
+        assertEquals(AccountStatus.ACTIVE, user.getAccountStatus());
+        assertEquals(result.user().getId(), user.getId());
+        assertNotNull(loginResult.sessionToken());
     }
 
     @Test
@@ -165,7 +245,7 @@ class UserServiceTest {
         userService.validateAccount(result.accountValidationToken());
         LoginResult loginResult = userService.login(new LoginRequest(
                 "guillermina@example.com",
-                "clave123"));
+                "Clave123"));
         authenticate(loginResult);
 
         userService.deleteAuthenticatedAccount(loginResult.sessionToken());
@@ -176,7 +256,7 @@ class UserServiceTest {
 
         BusinessRuleException loginException = assertThrows(BusinessRuleException.class, () -> userService.login(new LoginRequest(
                 "guillermina@example.com",
-                "clave123")));
+                "Clave123")));
         assertEquals("La cuenta no se encuentra activa.", loginException.getMessage());
 
         BusinessRuleException sessionException = assertThrows(BusinessRuleException.class, () -> userService.getAuthenticatedUser(loginResult.sessionToken()));
@@ -187,19 +267,17 @@ class UserServiceTest {
     void authenticatedUserCannotCloseAnotherUsersSession() {
         RegisterUserResult firstUser = registerClient();
         userService.validateAccount(firstUser.accountValidationToken());
-        LoginResult firstSession = userService.login(new LoginRequest("guillermina@example.com", "clave123"));
+        LoginResult firstSession = userService.login(new LoginRequest("guillermina@example.com", "Clave123"));
 
         RegisterUserResult secondUser = userService.registerUser(new RegisterUserRequest(
                 "Otra",
                 "Persona",
-                "87654321",
-                "2611111111",
                 "otra@example.com",
-                "clave123",
-                "clave123",
+                "Clave123",
+                "Clave123",
                 UserRole.CLIENT));
         userService.validateAccount(secondUser.accountValidationToken());
-        LoginResult secondSession = userService.login(new LoginRequest("otra@example.com", "clave123"));
+        LoginResult secondSession = userService.login(new LoginRequest("otra@example.com", "Clave123"));
 
         authenticate(firstSession);
 
@@ -247,11 +325,9 @@ class UserServiceTest {
         return userService.registerUser(new RegisterUserRequest(
                 "Guillermina",
                 "Fiore",
-                "12345678",
-                "2610000000",
                 "guillermina@example.com",
-                "clave123",
-                "clave123",
+                "Clave123",
+                "Clave123",
                 UserRole.CLIENT));
     }
 
@@ -260,10 +336,8 @@ class UserServiceTest {
         User user = User.register(new User.RegistrationData(
                 "Guillermina",
                 "Fiore",
-                "12345678",
-                "2610000000",
                 "guillermina@example.com",
-                PasswordSecurity.generateHash("clave123"),
+                PasswordSecurity.generateHash("Clave123"),
                 UserRole.CLIENT,
                 LocalDateTime.now(),
                 accountValidationToken,

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import '../../auth/styles/auth.css';
 import '../styles/profile.css';
 import { useAuth } from '../../auth/hooks/useAuth.js';
-import { createMyProfile, getMyProfile, updateMyProfile } from '../services/profileService.js';
+import { createMyProfile, getMyProfile, updateMyProfile, uploadPhoto } from '../services/profileService.js';
 
 export function ProfilesPage() {
   const { user, role } = useAuth();
@@ -14,6 +14,7 @@ export function ProfilesPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [hasProfile, setHasProfile] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const pageMeta = useMemo(() => getPageMeta(role), [role]);
 
@@ -69,6 +70,23 @@ export function ProfilesPage() {
     setFormData((current) => ({ ...current, [name]: value }));
   }
 
+  async function handleFileChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setErrorMessage('');
+    setUploadingPhoto(true);
+
+    try {
+      const result = await uploadPhoto(file);
+      setFormData((current) => ({ ...current, photoUrl: result.url }));
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage('');
@@ -92,7 +110,6 @@ export function ProfilesPage() {
   return (
     <main className="screen profile-screen">
       <section className="profile-hero">
-        <p className="eyebrow">M02 Profiles</p>
         <h1>{pageMeta.title}</h1>
         <p className="muted">{pageMeta.description}</p>
 
@@ -128,7 +145,7 @@ export function ProfilesPage() {
 
         {!isLoading && !errorMessage ? (
           <form className="auth-form auth-form--grid" onSubmit={handleSubmit}>
-            {renderFields(role, formData, handleChange)}
+            {renderFields(role, formData, handleChange, uploadingPhoto, handleFileChange)}
 
             <div className="field field--full">
               <button className="button button--primary" type="submit" disabled={isSubmitting}>
@@ -158,11 +175,11 @@ export function ProfilesPage() {
   );
 }
 
-function renderFields(role, formData, handleChange) {
+function renderFields(role, formData, handleChange, uploadingPhoto, handleFileChange) {
   if (role === 'WORKER') {
     return (
       <>
-        <Field label="Foto (URL)" name="photoUrl" value={formData.photoUrl} onChange={handleChange} placeholder="https://..." />
+        <PhotoField photoUrl={formData.photoUrl} uploading={uploadingPhoto} onChange={handleFileChange} />
         <Field required label="Años de experiencia" name="yearsOfExperience" type="number" min="0" value={formData.yearsOfExperience} onChange={handleChange} placeholder="3" />
         <Field required className="field--full" label="Descripción profesional" name="description" value={formData.description} onChange={handleChange} placeholder="Experiencia, estilo de trabajo y fortalezas." />
         <Field required className="field--full" label="Servicios ofrecidos" name="offeredServices" value={formData.offeredServices} onChange={handleChange} placeholder="Limpieza profunda, planchado, cocina, niñera..." />
@@ -175,7 +192,7 @@ function renderFields(role, formData, handleChange) {
 
   return (
     <>
-      <Field label="Foto (URL)" name="photoUrl" value={formData.photoUrl} onChange={handleChange} placeholder="https://..." />
+      <PhotoField photoUrl={formData.photoUrl} uploading={uploadingPhoto} onChange={handleFileChange} />
       <Field required label="Teléfono" name="contactPhone" value={formData.contactPhone} onChange={handleChange} placeholder="+54 261 555 1234" />
       <Field required label="Calle" name="streetName" value={formData.streetName} onChange={handleChange} placeholder="San Martín" />
       <Field required label="Número" name="streetNumber" value={formData.streetNumber} onChange={handleChange} placeholder="1234" />
@@ -186,6 +203,25 @@ function renderFields(role, formData, handleChange) {
       <Field required label="Provincia" name="province" value={formData.province} onChange={handleChange} placeholder="Mendoza" />
       <Field required className="field--full" label="Preferencias de contratación" name="hiringPreferences" value={formData.hiringPreferences} onChange={handleChange} placeholder="Frecuencia, horarios, servicios prioritarios..." />
     </>
+  );
+}
+
+function PhotoField({ photoUrl, uploading, onChange }) {
+  return (
+    <div className="field field--full">
+      <span>Foto de perfil</span>
+      <div className="photo-field">
+        {photoUrl ? (
+          <div className="photo-field__preview">
+            <img src={photoUrl.startsWith('http') ? photoUrl : `http://localhost:8080${photoUrl}`} alt="Foto de perfil" />
+          </div>
+        ) : null}
+        <label className="button button--secondary photo-field__upload">
+          {uploading ? 'Subiendo...' : (photoUrl ? 'Cambiar foto' : 'Seleccionar foto')}
+          <input type="file" accept="image/*" onChange={onChange} disabled={uploading} hidden />
+        </label>
+      </div>
+    </div>
   );
 }
 

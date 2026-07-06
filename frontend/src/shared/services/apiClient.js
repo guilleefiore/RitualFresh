@@ -7,7 +7,7 @@ export function setApiUnauthorizedHandler(handler) {
 }
 
 export async function apiRequest(path, options = {}) {
-  const { body, headers, ...restOptions } = options;
+  const { body, headers, skipUnauthorizedHandler = false, ...restOptions } = options;
   const requestHeaders = new Headers(headers || {});
 
   if (body !== undefined && !requestHeaders.has('Content-Type')) {
@@ -28,7 +28,7 @@ export async function apiRequest(path, options = {}) {
     error.status = response.status;
     error.payload = responseData;
 
-    if (response.status === 401 && unauthorizedHandler) {
+    if (response.status === 401 && unauthorizedHandler && !skipUnauthorizedHandler) {
       unauthorizedHandler(error);
     }
 

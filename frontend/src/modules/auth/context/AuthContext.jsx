@@ -1,6 +1,6 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { deleteCurrentUser, loginUser, logoutUser } from '../services/authService.js';
+import { deleteCurrentUser, getCurrentSession, loginUser, logoutUser } from '../services/authService.js';
 import { setApiUnauthorizedHandler } from '../../../shared/services/apiClient.js';
 
 export const AuthContext = createContext(null);
@@ -17,6 +17,7 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [sessionExpiresAt, setSessionExpiresAt] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   const role = getRoleFromUser(user);
   const accountStatus = getAccountStatusFromUser(user);
@@ -28,6 +29,28 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function bootstrapSession() {
+      try {
+        const response = await getCurrentSession();
+        if (isMounted) {
+          setUser(response.user);
+          setSessionExpiresAt(response.sessionExpiresAt || null);
+        }
+      } catch (error) {
+        if (error.status !== 401) {
+          // La sesión no es crítica para bloquear la carga; sólo se ignoran errores de arranque.
+        }
+      } finally {
+        if (isMounted) {
+          setIsAuthReady(true);
+        }
+      }
+    }
+
+    bootstrapSession();
+
     setApiUnauthorizedHandler(() => {
       clearAuthState();
       navigate('/login', {
@@ -37,6 +60,7 @@ export function AuthProvider({ children }) {
     });
 
     return () => {
+      isMounted = false;
       setApiUnauthorizedHandler(null);
     };
   }, [navigate]);
@@ -52,6 +76,16 @@ export function AuthProvider({ children }) {
     try {
       await logoutUser();
     } finally {
+      clearAuthState();
+    }
+  }
+
+  async function refreshSession() {
+    try {
+      const response = await getCurrentSession();
+      setUser(response.user);
+      setSessionExpiresAt(response.sessionExpiresAt || null);
+    } catch {
       clearAuthState();
     }
   }
@@ -80,8 +114,10 @@ export function AuthProvider({ children }) {
       logout,
       deleteAccount,
       clearAuthState,
+      refreshSession,
+      isAuthReady,
     }),
-    [user, role, accountStatus, sessionExpiresAt, isAuthenticated]
+    [user, role, accountStatus, sessionExpiresAt, isAuthenticated, isAuthReady]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

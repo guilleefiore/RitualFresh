@@ -71,8 +71,6 @@ public class User {
         User user = new User();
         user.firstName = data.firstName();
         user.lastName = data.lastName();
-        user.documentNumber = data.documentNumber();
-        user.phoneNumber = data.phoneNumber();
         user.email = data.email();
         user.passwordHash = data.passwordHash();
         user.role = data.role();
@@ -82,7 +80,25 @@ public class User {
         return user;
     }
 
+    public static User oauthAccount(OAuthAccountData data) {
+        User user = new User();
+        user.firstName = data.firstName();
+        user.lastName = data.lastName();
+        user.documentNumber = data.documentNumber();
+        user.phoneNumber = data.phoneNumber();
+        user.email = data.email();
+        user.passwordHash = data.passwordHash();
+        user.role = data.role();
+        user.accountStatus = AccountStatus.ACTIVE;
+        user.createdAt = data.createdAt();
+        return user;
+    }
+
     // Permite simular el autoincremental de la BD en repositorios en memoria.
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
+
     public void assignIdIfMissing(long id) {
         if (this.id == null) {
             this.id = id;
@@ -93,14 +109,23 @@ public class User {
     public record RegistrationData(
             String firstName,
             String lastName,
-            String documentNumber,
-            String phoneNumber,
             String email,
             String passwordHash,
             UserRole role,
             LocalDateTime createdAt,
             String accountValidationToken,
             LocalDateTime accountValidationTokenExpiresAt) {
+    }
+
+    public record OAuthAccountData(
+            String firstName,
+            String lastName,
+            String documentNumber,
+            String phoneNumber,
+            String email,
+            String passwordHash,
+            UserRole role,
+            LocalDateTime createdAt) {
     }
 
     // Indica si la cuenta ya quedó habilitada para operar.

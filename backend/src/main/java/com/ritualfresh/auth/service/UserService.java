@@ -3,6 +3,7 @@ package com.ritualfresh.auth.service;
 import com.ritualfresh.auth.dto.ConfirmPasswordResetRequest;
 import com.ritualfresh.auth.dto.LoginRequest;
 import com.ritualfresh.auth.dto.LoginResult;
+import com.ritualfresh.auth.dto.OAuth2ProfileData;
 import com.ritualfresh.auth.dto.PasswordResetRequest;
 import com.ritualfresh.auth.dto.PasswordResetResult;
 import com.ritualfresh.auth.dto.RegisterUserRequest;
@@ -33,6 +34,14 @@ import java.util.regex.Pattern;
 public class UserService {
     // Patron minimo para validar formato de email.
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    // Acepta DNI argentino de 7 u 8 digitos, con o sin puntos.
+    private static final Pattern ARGENTINE_DNI_PATTERN = Pattern.compile("^(?:\\d{7,8}|\\d{1,2}\\.\\d{3}\\.\\d{3})$");
+    // Acepta telefonos con prefijo opcional, espacios, guiones y parentesis.
+    private static final Pattern PHONE_ALLOWED_CHARS_PATTERN = Pattern.compile("^[\\d\\s()+-]+$");
+    // Reglas minimas de seguridad para contrasenas publicas.
+    private static final Pattern PASSWORD_UPPERCASE_PATTERN = Pattern.compile(".*[A-Z].*");
+    private static final Pattern PASSWORD_LOWERCASE_PATTERN = Pattern.compile(".*[a-z].*");
+    private static final Pattern PASSWORD_DIGIT_PATTERN = Pattern.compile(".*\\d.*");
     // Duracion estandar de una sesion iniciada correctamente.
     private static final int SESSION_DURATION_HOURS = 8;
     // Duracion del token de validacion de cuenta.
@@ -58,8 +67,6 @@ public class UserService {
         User user = User.register(new User.RegistrationData(
                 request.firstName().trim(),
                 request.lastName().trim(),
-                request.documentNumber().trim(),
-                request.phoneNumber().trim(),
                 normalizedEmail,
                 PasswordSecurity.generateHash(request.password()),
                 request.role(),
@@ -139,10 +146,98 @@ public class UserService {
         return new LoginResult(user, sessionToken, expiresAt);
     }
 
+    @Transactional
+    // Autentica o crea un usuario local a partir del perfil OAuth de Google.
+    public LoginResult loginWithGoogle(OAuth2ProfileData profileData) {
+        if (profileData == null) {
+            throw new BusinessRuleException("No se pudo iniciar sesion con Google.");
+        }
+
+        String normalizedEmail = normalizeEmail(profileData.email());
+        if (!isValidEmail(normalizedEmail)) {
+            throw new BusinessRuleException("No se pudo iniciar sesion con Google.");
+        }
+
+        boolean[] isNewUser = {false};
+        User user = userRepository.findByEmail(normalizedEmail).orElseGet(() -> {
+            isNewUser[0] = true;
+            String firstName = normalizeProfilePart(profileData.firstName(), "Usuario");
+            String lastName = normalizeProfilePart(profileData.lastName(), "Google");
+            String documentNumber = generateSyntheticDocumentNumber(normalizedEmail);
+            String phoneNumber = generateSyntheticPhoneNumber(normalizedEmail);
+
+            return User.oauthAccount(new User.OAuthAccountData(
+                    firstName,
+                    lastName,
+                    documentNumber,
+                    phoneNumber,
+                    normalizedEmail,
+                    PasswordSecurity.generateHash(UUID.randomUUID().toString()),
+                    UserRole.CLIENT,
+                    LocalDateTime.now()));
+        });
+
+        if (user.getAccountStatus() == AccountStatus.PENDING_VALIDATION) {
+            user.validateAccount();
+        } else if (!user.isActive()) {
+            throw new BusinessRuleException("La cuenta no se encuentra activa.");
+        }
+
+        userRepository.save(user);
+
+        LocalDateTime createdAt = LocalDateTime.now();
+        LocalDateTime expiresAt = createdAt.plusHours(SESSION_DURATION_HOURS);
+        String sessionToken = UUID.randomUUID().toString();
+        userSessionRepository.save(new UserSession(user, sessionToken, createdAt, expiresAt));
+
+        return new LoginResult(user, sessionToken, expiresAt, isNewUser[0]);
+    }
+    @Transactional
+    // Cambia el rol del usuario autenticado (CLIENT o WORKER).
+    public LoginResult updateUserRole(String sessionToken, UserRole newRole) {
+        if (newRole != UserRole.CLIENT && newRole != UserRole.WORKER) {
+            throw new BusinessRuleException("El rol debe ser cliente o trabajador.");
+        }
+
+        UserSession session = userSessionRepository.findByToken(sessionToken)
+                .orElseThrow(() -> new BusinessRuleException("Debe iniciar sesion para acceder a esta funcionalidad."));
+
+        if (!session.isActive(LocalDateTime.now())) {
+            throw new BusinessRuleException("La sesion expiro. Debe iniciar sesion nuevamente.");
+        }
+
+        User user = session.getUser();
+        if (user.getRole() == newRole) {
+            throw new BusinessRuleException("El usuario ya posee el rol seleccionado.");
+        }
+
+        user.setRole(newRole);
+        userRepository.save(user);
+
+        return new LoginResult(user, session.getToken(), session.getExpiresAt());
+    }
+
     @Transactional(readOnly = true) // sólo lee de la BD, no modifica.
     // Resuelve el usuario autenticado a partir de un token de sesion.
     public User getAuthenticatedUser(String sessionToken) {
         return getActiveUserFromSessionToken(sessionToken);
+    }
+
+    @Transactional(readOnly = true)
+    // Resuelve la sesion activa del usuario autenticado a partir del token de sesion.
+    public LoginResult getAuthenticatedSession(String sessionToken) {
+        UserSession session = userSessionRepository.findByToken(sessionToken)
+                .orElseThrow(() -> new BusinessRuleException("Debe iniciar sesion para acceder a esta funcionalidad."));
+
+        if (!session.isActive(LocalDateTime.now())) {
+            throw new BusinessRuleException("La sesion expiro. Debe iniciar sesion nuevamente.");
+        }
+
+        if (!session.getUser().isActive()) {
+            throw new BusinessRuleException("La cuenta no se encuentra activa.");
+        }
+
+        return new LoginResult(session.getUser(), session.getToken(), session.getExpiresAt());
     }
 
     @Transactional
@@ -279,14 +374,16 @@ public class UserService {
 
         validateRequired(request.firstName(), "nombre");
         validateRequired(request.lastName(), "apellido");
-        validateRequired(request.documentNumber(), "DNI");
-        validateRequired(request.phoneNumber(), "telefono");
         validateRequired(request.email(), EMAIL_FIELD);
         validateRequired(request.password(), CREDENTIAL_FIELD);
         validateRequired(request.confirmPassword(), "confirmacion de contrasena");
 
         if (!isValidEmail(request.email())) {
             throw new BusinessRuleException("El correo ingresado no posee un formato valido.");
+        }
+
+        if (!isStrongPassword(request.password())) {
+            throw new BusinessRuleException("La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero.");
         }
 
         if (userRepository.existsByEmail(request.email())) {
@@ -365,9 +462,65 @@ public class UserService {
         return email != null && EMAIL_PATTERN.matcher(email.trim()).matches();
     }
 
+    // Comprueba el formato basico del DNI argentino.
+    private boolean isValidArgentineDni(String documentNumber) {
+        return documentNumber != null && ARGENTINE_DNI_PATTERN.matcher(documentNumber.trim()).matches();
+    }
+
+    // Comprueba un telefono razonable para alta publica.
+    private boolean isValidPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null) {
+            return false;
+        }
+
+        String trimmedPhoneNumber = phoneNumber.trim();
+        if (!PHONE_ALLOWED_CHARS_PATTERN.matcher(trimmedPhoneNumber).matches()) {
+            return false;
+        }
+
+        String digitsOnly = trimmedPhoneNumber.replaceAll("\\D", "");
+        return digitsOnly.length() >= 10 && digitsOnly.length() <= 15;
+    }
+
+    // Valida una contrasena minima para cuentas publicas.
+    private boolean isStrongPassword(String password) {
+        if (password == null) {
+            return false;
+        }
+
+        String trimmedPassword = password.trim();
+        return trimmedPassword.length() >= 8
+                && PASSWORD_UPPERCASE_PATTERN.matcher(trimmedPassword).matches()
+                && PASSWORD_LOWERCASE_PATTERN.matcher(trimmedPassword).matches()
+                && PASSWORD_DIGIT_PATTERN.matcher(trimmedPassword).matches();
+    }
+
     // Normaliza el email para evitar diferencias por espacios o mayusculas.
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    // Guarda el DNI como solo digitos para mantener consistencia en persistencia.
+    private String normalizeDocumentNumber(String documentNumber) {
+        return documentNumber == null ? "" : documentNumber.replace(".", "").trim();
+    }
+
+    private String normalizeProfilePart(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+
+        return value.trim();
+    }
+
+    private String generateSyntheticDocumentNumber(String seed) {
+        long positiveHash = Integer.toUnsignedLong(seed.hashCode());
+        return String.format("%08d", positiveHash % 100_000_000L);
+    }
+
+    private String generateSyntheticPhoneNumber(String seed) {
+        long positiveHash = Integer.toUnsignedLong((seed + ":phone").hashCode());
+        return "261" + String.format("%07d", positiveHash % 10_000_000L);
     }
 
     // Obtiene el principal autenticado del contexto de Spring Security.

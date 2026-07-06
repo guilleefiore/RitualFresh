@@ -35,6 +35,9 @@ services:
       RITUALFRESH_BACKEND_BASE_URL: ${RITUALFRESH_BACKEND_BASE_URL:-http://localhost:8080}
       RITUALFRESH_FRONTEND_BASE_URL: ${RITUALFRESH_FRONTEND_BASE_URL:-http://localhost:5173}
       # Credenciales SMTP leidas por Spring Mail.
+      # Credenciales Google OAuth (completar en .env).
+      RITUALFRESH_GOOGLE_CLIENT_ID: ${RITUALFRESH_GOOGLE_CLIENT_ID:-}
+      RITUALFRESH_GOOGLE_CLIENT_SECRET: ${RITUALFRESH_GOOGLE_CLIENT_SECRET:-}
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-2525}
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
@@ -43,6 +46,9 @@ services:
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:-true}
     ports:
       - "8080:8080"
+    volumes:
+      - ritualfresh_uploads:/app/uploads
 
 volumes:
   ritualfresh_postgres_data:
+  ritualfresh_uploads:

@@ -20,8 +20,6 @@ class AdminBootstrapSeederTest {
                 userRepository,
                 "Admin",
                 "Inicial",
-                "00000000",
-                "2610000000",
                 "admin@example.com",
                 "admin123");
 
@@ -37,8 +35,6 @@ class AdminBootstrapSeederTest {
         User admin = User.register(new User.RegistrationData(
                 "Admin",
                 "Inicial",
-                "00000000",
-                "2610000000",
                 "admin@example.com",
                 "hash",
                 UserRole.ADMIN,
@@ -52,8 +48,6 @@ class AdminBootstrapSeederTest {
                 userRepository,
                 "Otro",
                 "Admin",
-                "11111111",
-                "2611111111",
                 "otro-admin@example.com",
                 "admin123");
 

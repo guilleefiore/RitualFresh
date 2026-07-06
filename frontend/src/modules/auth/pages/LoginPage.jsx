@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
+import { startGoogleLogin } from '../services/authService.js';
 import { AuthShell } from './components/AuthShell.jsx';
 
 function getHomePath(role) {
@@ -19,8 +20,17 @@ export function LoginPage() {
     password: '',
   });
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState(location.state?.message || '');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.has('oauth') && params.get('oauth') === 'error') {
+      setErrorMessage('No se pudo iniciar sesion con Google. Verifique que las credenciales de OAuth2 estén configuradas correctamente.');
+    } else if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+    }
+  }, [location]);
 
   useEffect(() => {
     if (isAuthenticated && role) {
@@ -112,6 +122,10 @@ export function LoginPage() {
 
         <button className="button button--primary" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
+        </button>
+
+        <button className="button button--ghost" type="button" onClick={startGoogleLogin}>
+          Continuar con Google
         </button>
       </form>
 

@@ -30,7 +30,7 @@ Validan interacción entre componentes.
 Casos mínimos:
 
 - Registro + login.
-- Login + acceso autenticado con `sessionToken`.
+- Login + acceso autenticado reutilizando cookie `HttpOnly` o `Authorization: Bearer <sessionToken>` en modo compatibilidad.
 - Perfil + búsqueda.
 - Búsqueda + solicitud.
 - Solicitud + aceptación + pago.
@@ -64,16 +64,14 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
 1. `POST /api/users/register`
    - Request ejemplo:
      ```json
-     {
-       "firstName": "Guillermina",
-       "lastName": "Fiore",
-       "documentNumber": "12345678",
-       "phoneNumber": "2610000000",
-       "email": "guillermina.test@example.com",
-       "password": "clave123",
-       "confirmPassword": "clave123",
-       "role": "CLIENT"
-     }
+      {
+        "firstName": "Guillermina",
+        "lastName": "Fiore",
+        "email": "guillermina.test@example.com",
+        "password": "clave123",
+        "confirmPassword": "clave123",
+        "role": "CLIENT"
+      }
      ```
    - Verifica registro de usuario con cuenta en estado pendiente.
    - Verifica que la API ya no exponga el token de validación en la respuesta.
@@ -103,7 +101,7 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
        "password": "clave123"
      }
      ```
-   - Verifica autenticación y generación del `sessionToken`.
+   - Verifica autenticación, generación de la sesión persistida y datos del usuario autenticado.
    - Verifica que la respuesta incluya `Set-Cookie` con la cookie `HttpOnly` de sesión.
 7. `POST /api/users/password-reset`
    - Request ejemplo:
@@ -143,7 +141,46 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
 16. `POST /api/users/logout`
     - Verifica cierre de sesión y rechazo posterior del mismo token.
 17. `GET /api/admin/users`
-    - Verifica acceso sólo con usuario `ADMIN`.
+    - Verifica acceso sólo con un usuario `ADMIN` autenticado en una sesión separada.
+
+##### Flujo manual para login con Google (OAuth 2.0)
+
+1. Asegurarse de que el archivo `.env` tenga configuradas las credenciales
+   `RITUALFRESH_GOOGLE_CLIENT_ID` y `RITUALFRESH_GOOGLE_CLIENT_SECRET`.
+2. Desde el frontend en `http://localhost:5173/login`, hacer clic en "Continuar con Google".
+3. Verificar redirección a la pantalla de autenticación de Google.
+4. Iniciar sesión con una cuenta de Google de prueba.
+5. Verificar redirección de vuelta a la aplicación y creación/autenticación exitosa del usuario local.
+6. Verificar que se establezca la cookie `HttpOnly` de sesión.
+7. Verificar que el usuario sea redirigido al home correspondiente a su rol.
+8. Repetir con una cuenta de Google cuyo correo ya exista en la base de datos (cuenta pendiente o activa)
+   y verificar que se reutilice correctamente.
+9. Repetir con una cuenta de Google cuyo correo ya exista pero con estado `DELETED` o `SUSPENDED`
+   y verificar que el login sea rechazado.
+10. Si las credenciales OAuth no son válidas, verificar que se redirija a `/login?oauth=error` con un mensaje
+    de error visible para el usuario.
+
+##### Flujo para selección de rol post-Google OAuth (usuario nuevo)
+
+1. Iniciar sesión con Google usando una cuenta que nunca haya iniciado sesión.
+2. Verificar redirección a `/choose-role` en lugar del home por rol.
+3. Hacer clic en "Soy Cliente".
+4. Verificar redirección a `/client/home`.
+5. Confirmar que el usuario quede con rol `CLIENT`.
+6. Repetir con otra cuenta nueva de Google.
+7. Hacer clic en "Soy Trabajador".
+8. Verificar redirección a `/worker/home`.
+9. Confirmar que el usuario quede con rol `WORKER`.
+
+##### Flujo manual para subida de foto de perfil
+
+1. Ingresar a la ruta protegida `/profiles`.
+2. Hacer clic en el área de foto o en el input de archivo.
+3. Seleccionar un archivo de imagen (jpg, png, webp) desde el sistema de archivos.
+4. Verificar que se muestre una vista previa de la imagen seleccionada.
+5. Hacer clic en "Guardar" y confirmar que la foto se persista.
+6. Refrescar la página y verificar que la foto se cargue desde el backend (`GET /uploads/<filename>`).
+7. Repetir seleccionando un archivo no imagen (pdf, txt) y verificar que se muestre un mensaje de error.
 
 ##### Prueba manual frontend del módulo `profiles`
 
@@ -173,6 +210,15 @@ Flujo recomendado para validar la pantalla implementada en React:
 Observación actual conocida:
 
 - Si se refresca la página completa, el frontend todavía no rehidrata la sesión desde la cookie. En ese caso puede requerirse iniciar sesión nuevamente para continuar probando.
+
+##### Prueba manual frontend del módulo `admin`
+
+1. Iniciar sesión con un usuario `ADMIN`.
+2. Abrir `/admin/home`.
+3. Verificar la carga de métricas y de la tabla de usuarios.
+4. Ingresar al detalle de un usuario desde `Ver detalles`.
+5. Confirmar navegación a `/admin/users/:userId`.
+6. Cambiar el estado de cuenta y validar persistencia de la actualización.
 
 Configuración mínima sugerida:
 
@@ -221,6 +267,7 @@ Cobertura actual implementada en backend:
   - `ADMIN` contra `/api/admin/**`
 - `UserServiceTest`
   - registro, validación, login y recuperación de contraseña
+  - `loginWithGoogle` para cuentas nuevas y pendientes
 - `ProfileServiceTest`
   - reglas de negocio y restricciones funcionales de perfiles
 - `AdminServiceTest`

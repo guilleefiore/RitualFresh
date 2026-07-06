@@ -103,6 +103,32 @@
   font-weight: 700;
 }
 
+.photo-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.photo-field__preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--color-border, #d0d5dd);
+  flex-shrink: 0;
+}
+
+.photo-field__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-field__upload {
+  cursor: pointer;
+}
+
 @media (max-width: 920px) {
   .profile-screen,
   .profile-details__grid {

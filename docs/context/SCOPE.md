@@ -6,9 +6,9 @@ RitualFresh incluye el análisis, diseño y desarrollo de una plataforma web par
 
 El sistema contempla:
 
-- Registro e inicio de sesión de usuarios.
+- Registro e inicio de sesión de usuarios (email/contraseña y Google OAuth).
 - Validación de cuenta, cierre de sesión y recuperación de contraseña.
-- Recuperación de contraseña.
+- Reenvío de validación y autoeliminación lógica de cuenta.
 - Roles de cliente, trabajador y administrador.
 - Perfil del cliente.
 - Perfil del trabajador.
@@ -66,7 +66,7 @@ Se priorizan funcionalidades que permitan demostrar el flujo completo del sistem
 
 En el estado actual del repositorio, el backend ya implementa una base operativa para:
 
-- `M01` autenticación y sesiones opacas con Spring Security
+- `M01` autenticación, validación, recuperación y sesiones opacas con Spring Security
 - `M02` perfiles de cliente y trabajador
 - soporte administrativo mínimo para usuarios y métricas
 

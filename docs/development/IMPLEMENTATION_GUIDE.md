@@ -24,7 +24,6 @@ Este documento centraliza criterios técnicos para implementar RitualFresh de fo
 - Hibernate ORM.
 - Jakarta Persistence.
 - Spring Security.
-- Spring WebSocket.
 - SpringDoc OpenAPI.
 - JUnit 5.
 
@@ -34,13 +33,8 @@ Este documento centraliza criterios técnicos para implementar RitualFresh de fo
 backend/src/main/java/com/ritualfresh/
 ├── admin/
 ├── auth/
-├── profiles/
-├── contracts/
-├── payments/
-├── ratings/
 ├── notifications/
-├── chat/
-├── geolocation/
+├── profiles/
 └── shared/
     ├── exception/
     ├── config/
@@ -57,6 +51,19 @@ Cada módulo puede contener, como mínimo, `controller`, `service`, `repository`
 - El backend mantiene compatibilidad técnica con `Authorization: Bearer <sessionToken>` para pruebas y debugging.
 - El `sessionToken` se persiste en `user_sessions` y se valida mediante un filtro de seguridad.
 - Las respuestas `401` y `403` se devuelven en JSON consistente con el resto de la API.
+- El sistema integra login social con Google mediante Spring Security OAuth2 Client:
+  - el flujo se inicia desde el frontend redirigiendo a `/oauth2/authorization/google`;
+  - tras la autenticación externa, `GoogleOAuth2SuccessHandler` extrae el perfil (email, nombre, apellido),
+    crea o autentica el usuario local y establece la cookie `HttpOnly` de sesión;
+  - los usuarios nuevos (nunca antes vistos) son redirigidos a `/choose-role` para seleccionar CLIENT o WORKER;
+  - los usuarios existentes son redirigidos al home según su rol (`/client/home`, `/worker/home`, `/admin/home`);
+  - los endpoints `/oauth2/**` y `/login/oauth2/**` son públicos (permitAll);
+  - las credenciales se configuran mediante `RITUALFRESH_GOOGLE_CLIENT_ID` y `RITUALFRESH_GOOGLE_CLIENT_SECRET`.
+- El sistema soporta subida de archivos para fotos de perfil:
+  - `StorageService` guarda archivos en `/app/uploads` (volumen Docker `ritualfresh_uploads`);
+  - `FileUploadController` expone `POST /api/upload` (multipart, valida tipo imagen);
+  - `WebConfig` sirve `/uploads/**` como recursos estáticos;
+  - el frontend usa un componente `PhotoField` que permite seleccionar archivo y envía multipart.
 
 Estructura transversal actual:
 
@@ -64,13 +71,19 @@ Estructura transversal actual:
 shared/
 ├── config/
 │   ├── CorsConfig.java
-│   └── SecurityConfig.java
+│   ├── SecurityConfig.java
+│   └── WebConfig.java
+├── controller/
+│   └── FileUploadController.java
 ├── exception/
-└── security/
-    ├── AuthenticatedUserPrincipal.java
-    ├── RestAccessDeniedHandler.java
-    ├── RestAuthenticationEntryPoint.java
-    └── SessionAuthenticationFilter.java
+├── security/
+│   ├── AuthenticatedUserPrincipal.java
+│   ├── GoogleOAuth2SuccessHandler.java
+│   ├── RestAccessDeniedHandler.java
+│   ├── RestAuthenticationEntryPoint.java
+│   └── SessionAuthenticationFilter.java
+└── service/
+    └── StorageService.java
 ```
 
 ## Reglas de implementación backend
@@ -93,8 +106,12 @@ shared/
   - `POST /api/users/register`
   - `POST /api/users/login`
   - `GET /api/users/validation`
+  - `POST /api/users/validation/resend`
   - `POST /api/users/password-reset`
   - `POST /api/users/password-reset/confirm`
+  - `GET /oauth2/authorization/google` (inicia flujo OAuth2)
+  - `GET /login/oauth2/code/google` (callback OAuth2)
+  - `/uploads/**` (archivos estáticos subidos, ej. fotos de perfil)
 - Endpoints administrativos:
   - `/api/admin/**` requiere `ROLE_ADMIN`
 - Endpoints de perfil cliente:
@@ -103,6 +120,7 @@ shared/
   - `/api/profiles/trabajadores/**` requiere `ROLE_WORKER`
 - Endpoints autenticados generales:
   - `POST /api/users/logout`
+  - `DELETE /api/users/me`
   - `GET /api/profiles/me`
 
 ## Frontend
@@ -125,11 +143,8 @@ frontend/src/
 ├── modules/
 │   ├── auth/
 │   ├── admin/
-│   ├── profiles/
-│   ├── search/
-│   └── contracts/
+│   └── profiles/
 ├── shared/
-│   ├── components/
 │   ├── guards/
 │   └── services/
 ├── styles/
@@ -142,7 +157,7 @@ frontend/src/
 
 - `app/router.jsx` centraliza las rutas públicas y protegidas.
 - `modules/auth` contiene login, registro, validación, recuperación y pantallas home mínimas por rol.
-- `modules/admin` concentra el dashboard administrativo y la gestión inicial de usuarios.
+- `modules/admin` concentra el dashboard administrativo, el listado embebido de usuarios, el detalle y el cambio de estado.
 - `modules/profiles` ya implementa un flujo vertical mínimo para `M02`.
 
 ### Flujo actual del módulo `profiles`
