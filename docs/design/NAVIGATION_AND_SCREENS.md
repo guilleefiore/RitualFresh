@@ -38,15 +38,14 @@
 ## Navegación del administrador
 
 - Dashboard administrativo.
-- Gestión de usuarios.
-- Gestión de reclamos.
-- Reporte de contrataciones.
-- Reporte de incidencias.
-- Configuración general.
+- Detalle de usuario.
+- Cambio de estado de cuenta.
 
 ## Transiciones relevantes
 
 - Registro exitoso → Inicio de sesión o pantalla de bienvenida.
+- Inicio de sesión con Google (usuario nuevo) → `/choose-role` (selección de rol).
+- Selección de rol completada → Inicio cliente o Inicio trabajador según el rol elegido.
 - Inicio de sesión cliente → Inicio cliente.
 - Inicio de sesión trabajador → Inicio trabajador.
 - Inicio cliente → Mi perfil (`/profiles`).
@@ -63,7 +62,7 @@
 
 - Cliente: búsqueda, solicitud, pago, historial, calificaciones, estadísticas de cliente.
 - Trabajador: perfil profesional, solicitudes, contrataciones asignadas, estadísticas de trabajador, datos de cobro.
-- Administrador: reportes, gestión de usuarios, reclamos y configuración.
+- Administrador: dashboard, métricas, listado embebido de usuarios, detalle y cambio de estado.
 
 ## Implementación frontend actual de perfiles
 
@@ -71,3 +70,10 @@
 - `CLIENT` visualiza y completa datos de contacto, domicilio y preferencias de contratación.
 - `WORKER` visualiza y completa descripción profesional, experiencia, servicios, zona, disponibilidad y precio orientativo.
 - La misma pantalla resuelve alta o edición según la respuesta de `GET /api/profiles/me`.
+
+## Implementación frontend actual de admin
+
+- La ruta protegida principal es `/admin/home`.
+- El dashboard muestra métricas y la tabla de usuarios en la misma pantalla.
+- El detalle navega a `/admin/users/:userId`.
+- No existe todavía una pantalla independiente para reclamos, reportes o configuración.

@@ -62,10 +62,9 @@ export function ConfirmPasswordResetPage() {
       footer={<Link to="/login">Volver al inicio de sesión</Link>}
     >
       <form className="auth-form" onSubmit={handleSubmit}>
-        <label className="field">
-          <span>Token de recuperación</span>
-          <input value={resetToken} readOnly />
-        </label>
+        <p className="inline-help">
+          Ingresá tu nueva contraseña para completar la recuperación desde el enlace recibido por correo.
+        </p>
 
         <label className="field">
           <span>Nueva contraseña</span>

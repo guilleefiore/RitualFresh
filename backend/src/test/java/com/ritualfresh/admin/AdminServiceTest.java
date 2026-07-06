@@ -150,8 +150,6 @@ class AdminServiceTest {
         User admin = User.register(new User.RegistrationData(
                 "Admin",
                 "Ritual",
-                "00000000",
-                "2610000000",
                 "admin@example.com",
                 PasswordSecurity.generateHash("admin123"),
                 UserRole.ADMIN,
@@ -168,11 +166,9 @@ class AdminServiceTest {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
                 "Guillermina",
                 "Fiore",
-                "12345678",
-                "2610000000",
                 "guillermina@example.com",
-                "clave123",
-                "clave123",
+                "Clave123",
+                "Clave123",
                 UserRole.CLIENT));
         userService.validateAccount(result.accountValidationToken());
         return result;
@@ -180,7 +176,7 @@ class AdminServiceTest {
 
     private LoginResult loginValidatedClient() {
         RegisterUserResult result = registerValidatedClient();
-        return userService.login(new LoginRequest(result.user().getEmail(), "clave123"));
+        return userService.login(new LoginRequest(result.user().getEmail(), "Clave123"));
     }
 
     private void authenticate(LoginResult session) {

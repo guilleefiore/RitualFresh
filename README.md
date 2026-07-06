@@ -21,7 +21,7 @@ Plataforma web académica para la gestión de servicios domésticos de limpieza 
 
 El proyecto ya cuenta con una base backend funcional para:
 
-- `M01`: gestión de usuarios, validación de cuenta, login, logout, recuperación de contraseña y sesiones opacas persistidas.
+- `M01`: registro, validación y reenvío de validación de cuenta, login (email/contraseña y Google OAuth), logout, autoeliminación lógica de la cuenta, recuperación de contraseña y sesiones opacas persistidas.
 - `M02`: creación, consulta y actualización de perfiles de cliente y trabajador.
 - administración mínima: listado de usuarios, detalle, cambio de estado y métricas básicas.
 
@@ -29,10 +29,10 @@ En frontend ya se encuentran implementados los flujos base para:
 
 - autenticación, validación y recuperación de contraseña;
 - dashboard mínimo por rol;
-- panel administrativo inicial;
+- panel administrativo inicial en `/admin/home` con detalle por usuario en `/admin/users/:userId`;
 - gestión de perfil propio para `CLIENT` y `WORKER` en la ruta protegida `/profiles`.
 
-La autenticación y autorización del backend se resuelven con Spring Security, manteniendo el modelo actual de `UserSession`. El transporte principal de sesión entre frontend y backend se realiza mediante cookie `HttpOnly`, aunque el backend todavía conserva compatibilidad técnica con `Authorization: Bearer <sessionToken>` para pruebas y debugging.
+La autenticación y autorización del backend se resuelven con Spring Security, manteniendo el modelo actual de `UserSession`. Además del login por email/contraseña, el sistema integra inicio de sesión con Google mediante OAuth 2.0, que tras la autenticación externa crea o reutiliza un usuario local y establece la misma cookie `HttpOnly` de sesión. El transporte principal de sesión entre frontend y backend se realiza mediante cookie `HttpOnly`, aunque el backend todavía conserva compatibilidad técnica con `Authorization: Bearer <sessionToken>` para pruebas y debugging.
 
 El modelo de datos general sigue sujeto a revisión para módulos posteriores, pero las entidades actuales de `auth`, `profiles` y `admin` ya se encuentran implementadas y probadas.
 
@@ -114,7 +114,10 @@ classDiagram
         +validateAccount(token) User
         +resendAccountValidation(email) void
         +login(request) LoginResult
+        +loginWithGoogle(profileData) LoginResult
+        +updateUserRole(userId, newRole) User
         +getAuthenticatedUser(sessionToken) User
+        +getAuthenticatedSession(sessionToken) LoginResult
         +closeSession(sessionToken) void
         +deleteAuthenticatedAccount(sessionToken) void
         +getAuthenticatedUser() User
@@ -195,6 +198,16 @@ classDiagram
         +matches(rawPassword, passwordHash) boolean
     }
 
+    class GoogleOAuth2SuccessHandler {
+        +onAuthenticationSuccess(request, response, authentication) void
+    }
+
+    class OAuth2ProfileData {
+        +String email
+        +String firstName
+        +String lastName
+    }
+
     User "1" --> "0..*" UserSession : mantiene
     User --> UserRole : usa
     User --> AccountStatus : usa
@@ -216,6 +229,12 @@ classDiagram
     JpaUserSessionRepository ..> UserSessionJpaRepository : adapta
     UserJpaRepository --> User : persiste
     UserSessionJpaRepository --> UserSession : persiste
+
+    GoogleOAuth2SuccessHandler ..> UserService : usa
+    GoogleOAuth2SuccessHandler ..> OAuth2ProfileData : extrae
+    UserService ..> OAuth2ProfileData : recibe
+    UserService ..> User : oauthAccount()
+    UserController ..> UserService : updateUserRole()
 ```
 ## Diagrama de clases del módulo `profiles`
 
@@ -361,5 +380,107 @@ classDiagram
     JpaWorkerProfileRepository ..> WorkerProfileJpaRepository : adapta
     ClientProfileJpaRepository --> ClientProfile : persiste
     WorkerProfileJpaRepository --> WorkerProfile : persiste
+
+    class StorageService {
+        +save(file) String
+        +load(filename) Resource
+    }
+
+    class FileUploadController {
+        +uploadFile(file) Map~String, String~
+    }
+
+    StorageService ..> FileUploadController : usado por
+    ProfileService ..> StorageService : sube foto de perfil
 ```
 
+## Diagrama de clases del módulo `admin`
+
+En este módulo también conviene concentrarse en las clases que sostienen el flujo principal de administración. Se muestran `controller`, `service`, el modelo reutilizado de `auth`, el repositorio compartido y el seeder de bootstrap; los DTOs se omiten para mantener el diagrama legible.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class User {
+        +Long id
+        +String firstName
+        +String lastName
+        +String email
+        +UserRole role
+        +AccountStatus accountStatus
+        +LocalDateTime createdAt
+        +LocalDateTime deactivatedAt
+        +register(data) User
+        +validateAccount()
+        +changeAccountStatus(accountStatus)
+        +deactivate()
+        +setRole(role)
+        +isActive() boolean
+    }
+
+    class UserRole {
+        <<enumeration>>
+        CLIENT
+        WORKER
+        ADMIN
+    }
+
+    class AccountStatus {
+        <<enumeration>>
+        PENDING_VALIDATION
+        ACTIVE
+        SUSPENDED
+        DELETED
+    }
+
+    class AdminController {
+        +listUsers(authentication) List~AdminUserResponse~
+        +getUser(authentication, id) AdminUserResponse
+        +updateUserStatus(authentication, id, request) AdminUserResponse
+        +getMetrics(authentication) AdminMetricsResponse
+    }
+
+    class AdminService {
+        +listUsers() List~AdminUserResponse~
+        +getUser(userId) AdminUserResponse
+        +updateUserStatus(userId, request) AdminUserResponse
+        +getMetrics() AdminMetricsResponse
+    }
+
+    class UserService {
+        +getAuthenticatedUser() User
+    }
+
+    class UserRepository {
+        <<interface>>
+        +save(user) User
+        +findAll() List~User~
+        +findById(id) Optional~User~
+        +existsByEmail(email) boolean
+    }
+
+    class AdminBootstrapSeeder {
+        +run(args) void
+    }
+
+    class PasswordSecurity {
+        <<utility>>
+        +generateHash(password) String
+    }
+
+    AdminController ..> AdminService : delega
+    AdminService ..> UserService : valida admin autenticado
+    AdminService ..> UserRepository : consulta/persiste
+    AdminService ..> User : lista/edita
+    AdminService ..> UserRole : cuenta por rol
+    AdminService ..> AccountStatus : valida transiciones
+
+    User --> UserRole : usa
+    User --> AccountStatus : usa
+
+    AdminBootstrapSeeder ..> UserRepository : verifica/guarda
+    AdminBootstrapSeeder ..> PasswordSecurity : cifra clave inicial
+    AdminBootstrapSeeder ..> User : crea admin inicial
+    AdminBootstrapSeeder ..> UserRole : asigna ADMIN
+```

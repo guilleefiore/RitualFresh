@@ -199,23 +199,21 @@ class ProfileServiceTest {
 
     private LoginResult registerValidateAndLoginClient() {
         User user = registerAndValidateClient();
-        return userService.login(new LoginRequest(user.getEmail(), "clave123"));
+        return userService.login(new LoginRequest(user.getEmail(), "Clave123"));
     }
 
     private LoginResult registerValidateAndLoginWorker() {
         User user = registerAndValidateWorker();
-        return userService.login(new LoginRequest(user.getEmail(), "clave123"));
+        return userService.login(new LoginRequest(user.getEmail(), "Clave123"));
     }
 
     private User registerAndValidateClient() {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
                 "Guillermina",
                 "Fiore",
-                "12345678",
-                "2610000000",
                 "guillermina@example.com",
-                "clave123",
-                "clave123",
+                "Clave123",
+                "Clave123",
                 UserRole.CLIENT));
 
         return userService.validateAccount(result.accountValidationToken());
@@ -225,11 +223,9 @@ class ProfileServiceTest {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
                 "Joaquin",
                 "Becerra",
-                "22333444",
-                "2612222222",
                 "joaquin@example.com",
-                "clave123",
-                "clave123",
+                "Clave123",
+                "Clave123",
                 UserRole.WORKER));
 
         return userService.validateAccount(result.accountValidationToken());

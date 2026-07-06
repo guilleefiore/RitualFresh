@@ -24,13 +24,14 @@ public class AdminService {
     private final UserService userService;
     private final UserRepository userRepository;
 
-    // Obtiene todos los usuarios ordenados por ID
+    // Obtiene todos los usuarios ordenados por ID (excluye al propio admin)
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public List<AdminUserResponse> listUsers() {
-        requireAdmin();
+        User actor = requireAdmin();
 
         return userRepository.findAll().stream()
+                .filter(user -> !user.getId().equals(actor.getId()))
                 .sorted(Comparator.comparing(User::getId))
                 .map(AdminUserResponse::from)
                 .toList();
@@ -124,7 +125,8 @@ public class AdminService {
             case SUSPENDED -> newStatus == AccountStatus.SUSPENDED
                     || newStatus == AccountStatus.ACTIVE
                     || newStatus == AccountStatus.DELETED;
-            case DELETED -> newStatus == AccountStatus.DELETED;
+            case DELETED -> newStatus == AccountStatus.DELETED
+                    || newStatus == AccountStatus.ACTIVE;
         };
     }
 

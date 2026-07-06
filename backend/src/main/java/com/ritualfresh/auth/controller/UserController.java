@@ -18,6 +18,7 @@ import com.ritualfresh.auth.dto.RegisterUserRequest;
 import com.ritualfresh.auth.dto.RegisterUserResult;
 import com.ritualfresh.auth.dto.ResendAccountValidationApiRequest;
 import com.ritualfresh.auth.dto.ResendAccountValidationApiResponse;
+import com.ritualfresh.auth.dto.UpdateUserRoleApiRequest;
 import com.ritualfresh.auth.dto.UserApiResponse;
 import com.ritualfresh.auth.model.User;
 import com.ritualfresh.auth.service.UserService;
@@ -31,6 +32,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,8 +53,6 @@ public class UserController {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
                 request.firstName(),
                 request.lastName(),
-                request.documentNumber(),
-                request.phoneNumber(),
                 request.email(),
                 request.password(),
                 request.confirmPassword(),
@@ -98,6 +98,17 @@ public class UserController {
                 UserApiResponse.from(result.user()));
     }
 
+    @GetMapping("/me")
+    // Devuelve la sesion actual del usuario autenticado.
+    public LoginApiResponse currentSession() {
+        LoginResult result = userService.getAuthenticatedSession(userService.getAuthenticatedSessionToken());
+
+        return new LoginApiResponse(
+                "Sesion activa.",
+                result.sessionExpiresAt(),
+                UserApiResponse.from(result.user()));
+    }
+
     @PostMapping("/password-reset")
     // Iniciar recuperación de contraseña (genera token y envía enlace)
     public PasswordResetApiResponse requestPasswordReset(@Valid @RequestBody PasswordResetApiRequest request) {
@@ -136,6 +147,21 @@ public class UserController {
         response.addHeader(HttpHeaders.SET_COOKIE, SessionCookieUtils.buildExpiredSessionCookieHeader());
 
         return new MessageApiResponse("Cuenta eliminada correctamente.");
+    }
+
+    @PutMapping("/me/role")
+    // Actualiza el rol del usuario autenticado (CLIENT o WORKER).
+    public LoginApiResponse updateMyRole(
+            Authentication authentication,
+            @Valid @RequestBody UpdateUserRoleApiRequest request) {
+        LoginResult result = userService.updateUserRole(
+                extractSessionToken(authentication),
+                request.role().toUserRole());
+
+        return new LoginApiResponse(
+                "Rol actualizado correctamente.",
+                result.sessionExpiresAt(),
+                UserApiResponse.from(result.user()));
     }
 
     private String extractSessionToken(Authentication authentication) {

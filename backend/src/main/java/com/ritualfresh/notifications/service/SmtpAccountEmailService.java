@@ -25,7 +25,7 @@ public class SmtpAccountEmailService implements AccountEmailService {
     public void sendAccountValidationEmail(User user, String accountValidationToken, LocalDateTime expiresAt) {
         send(
                 user.getEmail(),
-                "RitualFresh - Validacion de cuenta",
+                "RitualFresh - Validación de cuenta",
                 """
                         Hola %s,
 
@@ -38,22 +38,21 @@ public class SmtpAccountEmailService implements AccountEmailService {
     }
 
     @Override
-    // Envia el correo con el link y el token para recuperar la contrasena.
+    // Envia el correo con el link de recuperacion sin exponer el token por separado.
     public void sendPasswordResetEmail(User user, String resetToken, LocalDateTime expiresAt) {
         send(
                 user.getEmail(),
-                "RitualFresh - Recuperacion de contrasena",
+                "RitualFresh - Recuperación de contraseña",
                 """
                         Hola %s,
 
-                        Recibimos una solicitud para restablecer tu contrasena.
-                        Link de recuperacion:
+                        Recibimos una solicitud para restablecer tu contraseña.
+                        Para continuar, ingresá al siguiente enlace:
                         %s
 
-                        Token de recuperacion: %s
-                        Vigencia: %s
+                        Este enlace vence el: %s
                         """
-                        .formatted(user.getFirstName(), buildPasswordResetUrl(resetToken), resetToken, expiresAt));
+                        .formatted(user.getFirstName(), buildPasswordResetUrl(resetToken), expiresAt));
     }
 
     private void send(String to, String subject, String text) {

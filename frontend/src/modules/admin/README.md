@@ -28,7 +28,7 @@ admin/
 ### Dashboard Principal (`/admin/home`)
 - **Vista general** con estadísticas de usuarios
 - **Métricas** por rol y estado de cuenta
-- **Tabla de usuarios** con acciones rápidas
+- **Tabla de usuarios** embebida con acciones rápidas
 
 ### Gestión de Usuarios
 - **Listar usuarios** - GET `/api/admin/users`
@@ -76,19 +76,23 @@ Tarjetas mostrando las métricas de usuarios.
 
 ## Hooks
 
-### `useAdminUsers()`
+### `useAdminUsers(refreshKey)`
 Obtiene la lista de usuarios.
 
 ```jsx
-const { users, isLoading, error } = useAdminUsers();
+const { users, isLoading, error } = useAdminUsers(refreshKey);
 ```
 
-### `useAdminMetrics()`
+El parámetro `refreshKey` es opcional y permite forzar la recarga de la tabla después de una actualización.
+
+### `useAdminMetrics(refreshKey)`
 Obtiene las métricas de usuarios.
 
 ```jsx
-const { metrics, isLoading, error } = useAdminMetrics();
+const { metrics, isLoading, error } = useAdminMetrics(refreshKey);
 ```
+
+El parámetro `refreshKey` es opcional y permite refrescar el dashboard cuando cambia el estado de una cuenta.
 
 ## Endpoints de API utilizados
 
@@ -99,5 +103,11 @@ const { metrics, isLoading, error } = useAdminMetrics();
 
 ## Rutas
 
-- `/admin/home` - Dashboard principal (protegida por rol ADMIN)
+- `/admin/home` - Dashboard principal con métricas y listado de usuarios (protegida por rol ADMIN)
 - `/admin/users/:userId` - Detalles del usuario (protegida por rol ADMIN)
+
+## Estado actual del flujo
+
+- No existe una pantalla independiente para `/admin/users`.
+- El listado se resuelve dentro de `/admin/home`.
+- Desde la tabla se navega al detalle y se puede cambiar estado desde la misma tabla o desde la pantalla de detalle.

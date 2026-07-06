@@ -14,6 +14,17 @@ export function loginUser(data) {
   });
 }
 
+export function getCurrentSession() {
+  return apiRequest('/api/users/me', {
+    method: 'GET',
+    skipUnauthorizedHandler: true,
+  });
+}
+
+export function startGoogleLogin() {
+  window.location.assign(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/oauth2/authorization/google`);
+}
+
 export function requestPasswordReset(data) {
   return apiRequest('/api/users/password-reset', {
     method: 'POST',
@@ -42,6 +53,13 @@ export function resendAccountValidation(data) {
 export function logoutUser() {
   return apiRequest('/api/users/logout', {
     method: 'POST',
+  });
+}
+
+export function updateUserRole(role) {
+  return apiRequest('/api/users/me/role', {
+    method: 'PUT',
+    body: { role },
   });
 }
 

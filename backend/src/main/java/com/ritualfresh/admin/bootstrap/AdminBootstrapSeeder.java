@@ -20,8 +20,6 @@ public class AdminBootstrapSeeder implements ApplicationRunner {
     private final UserRepository userRepository;
     private final String firstName;
     private final String lastName;
-    private final String documentNumber;
-    private final String phoneNumber;
     private final String email;
     private final String password;
     // Datos del administrador inicial obtenidos de la configuración
@@ -30,15 +28,11 @@ public class AdminBootstrapSeeder implements ApplicationRunner {
             UserRepository userRepository,
             @Value("${ritualfresh.admin.bootstrap.first-name:}") String firstName,
             @Value("${ritualfresh.admin.bootstrap.last-name:}") String lastName,
-            @Value("${ritualfresh.admin.bootstrap.document-number:}") String documentNumber,
-            @Value("${ritualfresh.admin.bootstrap.phone-number:}") String phoneNumber,
             @Value("${ritualfresh.admin.bootstrap.email:}") String email,
             @Value("${ritualfresh.admin.bootstrap.password:}") String password) {
         this.userRepository = userRepository;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.documentNumber = documentNumber;
-        this.phoneNumber = phoneNumber;
         this.email = email;
         this.password = password;
     }
@@ -52,8 +46,7 @@ public class AdminBootstrapSeeder implements ApplicationRunner {
         }
 
         // Validar que todos los datos requeridos estén configurados
-        if (isBlank(firstName) || isBlank(lastName) || isBlank(documentNumber)
-                || isBlank(phoneNumber) || isBlank(email) || isBlank(password)) {
+        if (isBlank(firstName) || isBlank(lastName) || isBlank(email) || isBlank(password)) {
             throw new IllegalStateException("Faltan datos para crear el usuario administrador inicial.");
         }
 
@@ -66,8 +59,6 @@ public class AdminBootstrapSeeder implements ApplicationRunner {
         User admin = User.register(new User.RegistrationData(
                 firstName.trim(),
                 lastName.trim(),
-                documentNumber.trim(),
-                phoneNumber.trim(),
                 email.trim().toLowerCase(),
                 PasswordSecurity.generateHash(password),
                 UserRole.ADMIN,

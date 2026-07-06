@@ -7,5 +7,10 @@ import java.time.LocalDateTime;
 public record LoginResult(
         User user,
         String sessionToken,
-        LocalDateTime sessionExpiresAt) {
+        LocalDateTime sessionExpiresAt,
+        boolean isNewUser) {
+
+    public LoginResult(User user, String sessionToken, LocalDateTime sessionExpiresAt) {
+        this(user, sessionToken, sessionExpiresAt, false);
+    }
 }
