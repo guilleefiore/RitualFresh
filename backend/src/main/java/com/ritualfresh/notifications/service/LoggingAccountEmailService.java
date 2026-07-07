@@ -21,9 +21,9 @@ public class LoggingAccountEmailService implements AccountEmailService {
     @Override
     public void sendAccountValidationEmail(User user, String accountValidationToken, LocalDateTime expiresAt) {
         log.info(
-                "Correo de validacion no enviado por SMTP. destinatario={}, enlace={}/api/users/validation?token={}, expira={}",
+                "Correo de validacion no enviado por SMTP. destinatario={}, enlace={}/validation?token={}, expira={}",
                 user.getEmail(),
-                mailProperties.getBackendBaseUrl(),
+                trimTrailingSlash(mailProperties.getFrontendBaseUrl()),
                 accountValidationToken,
                 expiresAt);
     }
@@ -33,8 +33,16 @@ public class LoggingAccountEmailService implements AccountEmailService {
         log.info(
                 "Correo de recuperacion no enviado por SMTP. destinatario={}, enlace={}/password-reset/confirm?token={}, expira={}",
                 user.getEmail(),
-                mailProperties.getFrontendBaseUrl(),
+                trimTrailingSlash(mailProperties.getFrontendBaseUrl()),
                 resetToken,
                 expiresAt);
+    }
+
+    private String trimTrailingSlash(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }

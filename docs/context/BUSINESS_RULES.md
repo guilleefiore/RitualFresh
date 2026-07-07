@@ -5,8 +5,12 @@ Este documento resume reglas funcionales de RitualFresh derivadas del análisis 
 ## Usuarios y autenticación
 
 - Un usuario puede registrarse como cliente o trabajador.
-- El correo electrónico debe ser único dentro del sistema.
-- No se permite registrar una cuenta con un correo ya existente.
+- El correo electrónico debe ser único entre cuentas vigentes dentro del sistema.
+- No se permite registrar una cuenta con un correo ya existente si la cuenta está activa, pendiente de validación o suspendida.
+- Si una cuenta fue eliminada lógicamente (`DELETED`), el usuario puede volver a registrarse con el mismo correo; el sistema reutiliza la cuenta existente y la deja pendiente de validación.
+- Si una cuenta eliminada vuelve mediante Google OAuth, el sistema reactiva la cuenta existente y crea una nueva sesión.
+- Una cuenta suspendida (`SUSPENDED`) no puede iniciar sesión ni volver a registrarse con el mismo correo hasta que un administrador la reactive.
+- El registro público solicita email, contraseña, confirmación y rol; DNI, teléfono, dirección y datos profesionales se completan posteriormente en el perfil correspondiente.
 - El usuario debe iniciar sesión para acceder a funcionalidades privadas.
 - La recuperación de contraseña requiere un correo registrado.
 - El sistema debe diferenciar permisos según rol.

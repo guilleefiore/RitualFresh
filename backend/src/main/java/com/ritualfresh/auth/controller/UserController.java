@@ -51,8 +51,6 @@ public class UserController {
     // Crear cuenta (persiste usuario y envía email de validación)
     public RegisterUserApiResponse registerUser(@Valid @RequestBody RegisterUserApiRequest request) {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
-                request.firstName(),
-                request.lastName(),
                 request.email(),
                 request.password(),
                 request.confirmPassword(),

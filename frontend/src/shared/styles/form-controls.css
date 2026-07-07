@@ -8,6 +8,10 @@
   font-weight: 700;
 }
 
+.required-asterisk {
+  color: var(--color-text-muted);
+}
+
 .form-field__control {
   display: flex;
   align-items: center;
@@ -18,6 +22,10 @@
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
+}
+
+.form-field:has(.form-field__error) .form-field__control {
+  border-color: var(--color-danger);
 }
 
 .form-field__control:focus-within {
@@ -39,6 +47,23 @@
   color: inherit;
   font: inherit;
   min-width: 0;
+}
+
+.form-field__input:focus,
+.form-field__input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.form-field__input--textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+.form-field__error {
+  color: var(--color-danger);
+  font-size: 0.82rem;
+  font-weight: 500;
 }
 
 .form-field--full {

@@ -82,7 +82,7 @@ public record UserProfileResult(
                 profile.getWorkArea(),
                 profile.getAvailability(),
                 profile.getHourlyRate(),
-                null,
+                user.getPhoneNumber(),
                 null,
                 null,
                 null,

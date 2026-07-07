@@ -35,7 +35,6 @@ export function PasswordResetPage() {
 
   return (
     <AuthShell
-      eyebrow="Recuperación"
       title="Recuperar contraseña"
       footer={<Link to="/login">Volver al inicio de sesión</Link>}
     >

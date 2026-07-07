@@ -21,6 +21,10 @@
   width: 100%;
 }
 
+.auth-form--register {
+  gap: var(--space-3);
+}
+
 .auth-form {
   display: grid;
   gap: var(--space-4);
@@ -46,6 +50,10 @@
   align-items: flex-start;
   font-size: 0.92rem;
   font-weight: 500;
+}
+
+.checkbox--terms span {
+  line-height: 1.45;
 }
 
 .checkbox input {
@@ -123,7 +131,7 @@
   display: grid;
   gap: 0.35rem;
   width: 100%;
-  padding: 1rem 1rem 0.95rem;
+  padding: 0.9rem 1rem 0.85rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -142,6 +150,11 @@
   border-color: var(--color-accent);
   background: var(--color-accent-soft);
   box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+
+.account-type__card:focus-visible {
+  outline: 3px solid rgba(21, 101, 192, 0.22);
+  outline-offset: 2px;
 }
 
 .account-type__icon {
@@ -196,6 +209,12 @@
 .button--primary {
   background: var(--color-accent);
   color: #fff;
+}
+
+.button--secondary {
+  background: var(--color-accent-soft);
+  color: var(--color-primary-dark);
+  border: 1px solid rgba(21, 101, 192, 0.12);
 }
 
 .button--ghost {
@@ -285,10 +304,10 @@
   gap: var(--space-4);
 }
 
-.status-panel__token {
+.status-panel__lead {
   margin: 0;
   color: var(--color-text-muted);
-  word-break: break-all;
+  line-height: 1.5;
 }
 
 .dashboard-screen {
@@ -327,6 +346,10 @@
 @media (max-width: 920px) {
   .auth-screen {
     grid-template-columns: 1fr;
+  }
+
+  .role-page__intro {
+    margin-bottom: var(--space-4);
   }
 
   .auth-form--grid,

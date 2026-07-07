@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import { updateUserRole } from '../services/authService.js';
 import { AuthShell } from './components/AuthShell.jsx';
 
 export function ChooseRolePage() {
   const navigate = useNavigate();
-  const { role, refreshSession } = useAuth();
+  const { user, refreshSession } = useAuth();
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,20 +25,15 @@ export function ChooseRolePage() {
     }
   }
 
-  if (role && role !== 'CLIENT') {
-    navigate('/login', { replace: true });
-    return null;
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
   return (
-    <AuthShell
-      eyebrow="Bienvenido"
-      title="¿Qué tipo de cuenta querés?"
-      footer={null}
-    >
+    <AuthShell eyebrow="Bienvenido" title="¿Qué tipo de cuenta querés?" footer={null}>
       <div className="auth-form">
         <p className="muted" style={{ marginBottom: '1.5rem' }}>
-              Elegí el tipo de cuenta con la que querés usar RitualFresh. Podrás completar tu perfil después.
+          Elegí el tipo de cuenta con la que querés usar RitualFresh. Podrás completar tu perfil después.
         </p>
 
         {errorMessage ? <p className="feedback feedback--error">{errorMessage}</p> : null}

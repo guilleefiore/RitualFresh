@@ -35,7 +35,6 @@ export function ResendValidationPage() {
 
   return (
     <AuthShell
-      eyebrow="Reenvío"
       title="Reenviar validación"
       footer={<Link to="/login">Volver al inicio de sesión</Link>}
     >

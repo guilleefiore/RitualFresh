@@ -59,15 +59,10 @@ export function ConfirmPasswordResetPage() {
 
   return (
     <AuthShell
-      eyebrow="Nueva contraseña"
       title="Confirmar recuperación"
       footer={<Link to="/login">Volver al inicio de sesión</Link>}
     >
       <form className="auth-form" onSubmit={handleSubmit}>
-        <p className="inline-help">
-          Ingresá tu nueva contraseña para completar la recuperación desde el enlace recibido por correo.
-        </p>
-
         <FormField
           label="Nueva contraseña"
           icon={<FiLock />}
@@ -75,6 +70,7 @@ export function ConfirmPasswordResetPage() {
           type="password"
           value={formData.password}
           onChange={handleChange}
+          placeholder="Ingresar nueva contraseña"
         />
 
         <FormField
@@ -84,6 +80,7 @@ export function ConfirmPasswordResetPage() {
           type="password"
           value={formData.confirmPassword}
           onChange={handleChange}
+          placeholder="Repetí nueva contraseña"
         />
 
         {successMessage ? <p className="feedback feedback--success">{successMessage}</p> : null}

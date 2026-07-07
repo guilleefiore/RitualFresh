@@ -57,7 +57,7 @@ class AdminServiceTest {
         List<AdminUserResponse> users = adminService.listUsers();
         AdminMetricsResponse metrics = adminService.getMetrics();
 
-        assertEquals(2, users.size());
+        assertEquals(1, users.size());
         assertEquals(1, metrics.clientUsers());
         assertEquals(1, metrics.adminUsers());
         assertEquals(2, metrics.totalUsers());
@@ -118,7 +118,7 @@ class AdminServiceTest {
     }
 
     @Test
-    void adminCanReactivateSuspendedUserButNotDeletedOne() {
+    void adminCanReactivateSuspendedAndDeletedUsers() {
         LoginResult adminSession = createAdminSession();
         authenticate(adminSession);
         User client = registerValidatedClient().user();
@@ -138,12 +138,12 @@ class AdminServiceTest {
                 client.getId(),
                 new AdminUserStatusRequest(AdminAccountStatus.DELETED));
 
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> adminService.updateUserStatus(
+        AdminUserResponse restored = adminService.updateUserStatus(
                 client.getId(),
-                new AdminUserStatusRequest(AdminAccountStatus.ACTIVE)));
+                new AdminUserStatusRequest(AdminAccountStatus.ACTIVE));
 
-        assertEquals("La transicion de estado no es valida.", exception.getMessage());
-        assertEquals(AccountStatus.DELETED, userRepository.findById(client.getId()).orElseThrow().getAccountStatus());
+        assertEquals(AccountStatus.ACTIVE, restored.accountStatus());
+        assertEquals(AccountStatus.ACTIVE, userRepository.findById(client.getId()).orElseThrow().getAccountStatus());
     }
 
     private LoginResult createAdminSession() {
@@ -164,8 +164,6 @@ class AdminServiceTest {
 
     private RegisterUserResult registerValidatedClient() {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
                 "guillermina@example.com",
                 "Clave123",
                 "Clave123",

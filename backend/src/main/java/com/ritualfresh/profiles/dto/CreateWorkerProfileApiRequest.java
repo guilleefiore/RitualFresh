@@ -8,7 +8,10 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record CreateWorkerProfileApiRequest(
+        @NotBlank String firstName,
+        @NotBlank String lastName,
         String photoUrl,
+        @NotBlank String contactPhone,
         @NotBlank String description,
         @NotNull @Min(0) Integer yearsOfExperience,
         @NotBlank String offeredServices,

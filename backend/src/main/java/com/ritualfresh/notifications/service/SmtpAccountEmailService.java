@@ -29,7 +29,7 @@ public class SmtpAccountEmailService implements AccountEmailService {
                 """
                         Hola %s,
 
-                        Para activar tu cuenta, ingresa al siguiente enlace:
+                        Para activar tu cuenta, ingresá al siguiente enlace:
                         %s
 
                         Vigencia: %s
@@ -70,10 +70,18 @@ public class SmtpAccountEmailService implements AccountEmailService {
     }
 
     private String buildValidationUrl(String token) {
-        return mailProperties.getBackendBaseUrl() + "/api/users/validation?token=" + token;
+        return trimTrailingSlash(mailProperties.getFrontendBaseUrl()) + "/validation?token=" + token;
     }
 
     private String buildPasswordResetUrl(String token) {
-        return mailProperties.getFrontendBaseUrl() + "/password-reset/confirm?token=" + token;
+        return trimTrailingSlash(mailProperties.getFrontendBaseUrl()) + "/password-reset/confirm?token=" + token;
+    }
+
+    private String trimTrailingSlash(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }

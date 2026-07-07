@@ -3,6 +3,8 @@ package com.ritualfresh.profiles.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public record CreateClientProfileApiRequest(
+        @NotBlank String firstName,
+        @NotBlank String lastName,
         String photoUrl,
         @NotBlank String contactPhone,
         @NotBlank String streetName,

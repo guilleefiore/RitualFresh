@@ -51,6 +51,8 @@ public class UserService {
     // Etiquetas reutilizadas en validaciones para evitar duplicar literales.
     private static final String EMAIL_FIELD = "correo electronico";
     private static final String CREDENTIAL_FIELD = "contrasena";
+    private static final String PENDING_FIRST_NAME = "Pendiente";
+    private static final String PENDING_LAST_NAME = "Completar";
 
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
@@ -64,15 +66,21 @@ public class UserService {
         String normalizedEmail = normalizeEmail(request.email());
         String accountValidationToken = UUID.randomUUID().toString();
         LocalDateTime accountValidationTokenExpiresAt = LocalDateTime.now().plusHours(ACCOUNT_VALIDATION_DURATION_HOURS);
-        User user = User.register(new User.RegistrationData(
-                request.firstName().trim(),
-                request.lastName().trim(),
+        User.RegistrationData registrationData = new User.RegistrationData(
+                PENDING_FIRST_NAME,
+                PENDING_LAST_NAME,
                 normalizedEmail,
                 PasswordSecurity.generateHash(request.password()),
                 request.role(),
                 LocalDateTime.now(),
                 accountValidationToken,
-                accountValidationTokenExpiresAt));
+                accountValidationTokenExpiresAt);
+        User user = userRepository.findByEmail(normalizedEmail)
+                .map(existingUser -> {
+                    existingUser.restoreRegistration(registrationData);
+                    return existingUser;
+                })
+                .orElseGet(() -> User.register(registrationData));
 
         userRepository.save(user);
         accountEmailService.sendAccountValidationEmail(user, accountValidationToken, accountValidationTokenExpiresAt); // envía mail de validación.
@@ -158,27 +166,30 @@ public class UserService {
             throw new BusinessRuleException("No se pudo iniciar sesion con Google.");
         }
 
+        String firstName = normalizeProfilePart(profileData.firstName(), "Usuario");
+        String lastName = normalizeProfilePart(profileData.lastName(), "Google");
+        String documentNumber = generateSyntheticDocumentNumber(normalizedEmail);
+        String phoneNumber = generateSyntheticPhoneNumber(normalizedEmail);
+        User.OAuthAccountData oauthAccountData = new User.OAuthAccountData(
+                firstName,
+                lastName,
+                documentNumber,
+                phoneNumber,
+                normalizedEmail,
+                PasswordSecurity.generateHash(UUID.randomUUID().toString()),
+                UserRole.CLIENT,
+                LocalDateTime.now());
         boolean[] isNewUser = {false};
         User user = userRepository.findByEmail(normalizedEmail).orElseGet(() -> {
             isNewUser[0] = true;
-            String firstName = normalizeProfilePart(profileData.firstName(), "Usuario");
-            String lastName = normalizeProfilePart(profileData.lastName(), "Google");
-            String documentNumber = generateSyntheticDocumentNumber(normalizedEmail);
-            String phoneNumber = generateSyntheticPhoneNumber(normalizedEmail);
-
-            return User.oauthAccount(new User.OAuthAccountData(
-                    firstName,
-                    lastName,
-                    documentNumber,
-                    phoneNumber,
-                    normalizedEmail,
-                    PasswordSecurity.generateHash(UUID.randomUUID().toString()),
-                    UserRole.CLIENT,
-                    LocalDateTime.now()));
+            return User.oauthAccount(oauthAccountData);
         });
 
         if (user.getAccountStatus() == AccountStatus.PENDING_VALIDATION) {
             user.validateAccount();
+        } else if (user.getAccountStatus() == AccountStatus.DELETED) {
+            isNewUser[0] = true;
+            user.restoreOAuthAccount(oauthAccountData);
         } else if (!user.isActive()) {
             throw new BusinessRuleException("La cuenta no se encuentra activa.");
         }
@@ -372,8 +383,6 @@ public class UserService {
             throw new BusinessRuleException("Debe completar los datos de registro.");
         }
 
-        validateRequired(request.firstName(), "nombre");
-        validateRequired(request.lastName(), "apellido");
         validateRequired(request.email(), EMAIL_FIELD);
         validateRequired(request.password(), CREDENTIAL_FIELD);
         validateRequired(request.confirmPassword(), "confirmacion de contrasena");
@@ -386,7 +395,9 @@ public class UserService {
             throw new BusinessRuleException("La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero.");
         }
 
-        if (userRepository.existsByEmail(request.email())) {
+        if (userRepository.findByEmail(request.email())
+                .filter(user -> user.getAccountStatus() != AccountStatus.DELETED)
+                .isPresent()) {
             throw new BusinessRuleException("El correo ya se encuentra registrado.");
         }
 
@@ -397,6 +408,18 @@ public class UserService {
         if (request.role() != UserRole.CLIENT && request.role() != UserRole.WORKER) {
             throw new BusinessRuleException("Debe seleccionar el rol cliente o trabajador.");
         }
+    }
+
+    @Transactional
+    public User updateAuthenticatedUserProfileData(String firstName, String lastName, String phoneNumber) {
+        User user = getAuthenticatedUser();
+        user.editData(
+                validateRequiredProfileValue(firstName, "nombre"),
+                validateRequiredProfileValue(lastName, "apellido"),
+                user.getDocumentNumber(),
+                phoneNumber == null ? user.getPhoneNumber() : phoneNumber.trim());
+        userRepository.save(user);
+        return user;
     }
 
     // Valida lo minimo necesario antes de intentar autenticar.
@@ -455,6 +478,11 @@ public class UserService {
         if (value == null || value.isBlank()) {
             throw new BusinessRuleException("Debe completar el campo " + fieldName + ".");
         }
+    }
+
+    private String validateRequiredProfileValue(String value, String fieldName) {
+        validateRequired(value, fieldName);
+        return value.trim();
     }
 
     // Comprueba si el email cumple un formato basico aceptable.
