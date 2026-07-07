@@ -75,9 +75,8 @@ export function RegisterPage() {
 
   return (
     <AuthShell
-      eyebrow="Registro"
       title="Crear cuenta"
-      description="Accede a todas las funciones como cliente o trabajador profesional."
+      description="Accede a todas las funciones como cliente o trabajador profesional"
       footer={
         <>
           <span>¿Ya tienes cuenta?</span>

@@ -92,9 +92,8 @@ export function RegisterRolePage() {
 
   return (
     <AuthShell
-      eyebrow="Registro"
       title="Elegí tu tipo de cuenta"
-      description="Seleccioná cómo querés usar RitualFresh y aceptá los términos para finalizar."
+      description="Seleccioná cómo querés usar RitualFresh y aceptá los términos para finalizar"
       footer={
         <>
           <span>¿Ya tienes cuenta?</span>
