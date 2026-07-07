@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { confirmPasswordReset } from '../services/authService.js';
 import { AuthShell } from './components/AuthShell.jsx';
+import { FiLock } from 'react-icons/fi';
+import { FormField } from '../../../shared/components/FormField.jsx';
 
 export function ConfirmPasswordResetPage() {
   const [searchParams] = useSearchParams();
@@ -66,20 +68,23 @@ export function ConfirmPasswordResetPage() {
           Ingresá tu nueva contraseña para completar la recuperación desde el enlace recibido por correo.
         </p>
 
-        <label className="field">
-          <span>Nueva contraseña</span>
-          <input name="password" type="password" value={formData.password} onChange={handleChange} />
-        </label>
+        <FormField
+          label="Nueva contraseña"
+          icon={<FiLock />}
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+        />
 
-        <label className="field">
-          <span>Confirmar nueva contraseña</span>
-          <input
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-          />
-        </label>
+        <FormField
+          label="Confirmar nueva contraseña"
+          icon={<FiLock />}
+          name="confirmPassword"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+        />
 
         {successMessage ? <p className="feedback feedback--success">{successMessage}</p> : null}
         {errorMessage ? <p className="feedback feedback--error">{errorMessage}</p> : null}

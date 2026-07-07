@@ -17,6 +17,11 @@ Plataforma web académica para la gestión de servicios domésticos de limpieza 
 - Backend: Java 21, Spring Boot 3.5.x, Maven, PostgreSQL.
 - Frontend: React 19, Node.js 22, Bootstrap 5.3.
 
+## Guía visual RitualFresh
+
+- Referencia obligatoria: [frontend/docs/UI_GUIDELINES.md](frontend/docs/UI_GUIDELINES.md)
+- Cualquier cambio visual futuro debe respetar esa guía antes de modificar componentes o tokens.
+
 ## Estado actual
 
 El proyecto ya cuenta con una base backend funcional para:

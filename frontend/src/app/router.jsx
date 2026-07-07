@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from '../modules/auth/pages/LoginPage.jsx';
 import { RegisterPage } from '../modules/auth/pages/RegisterPage.jsx';
+import { RegisterRolePage } from '../modules/auth/pages/RegisterRolePage.jsx';
 import { ChooseRolePage } from '../modules/auth/pages/ChooseRolePage.jsx';
 import { PasswordResetPage } from '../modules/auth/pages/PasswordResetPage.jsx';
 import { ConfirmPasswordResetPage } from '../modules/auth/pages/ConfirmPasswordResetPage.jsx';
@@ -26,6 +27,7 @@ export function AppRouter() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register/role" element={<RegisterRolePage />} />
       <Route path="/password-reset" element={<PasswordResetPage />} />
       <Route path="/password-reset/confirm" element={<ConfirmPasswordResetPage />} />
       <Route path="/reset-password" element={<LegacyResetPasswordRedirect />} />

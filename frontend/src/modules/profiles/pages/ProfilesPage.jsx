@@ -4,6 +4,8 @@ import '../../auth/styles/auth.css';
 import '../styles/profile.css';
 import { useAuth } from '../../auth/hooks/useAuth.js';
 import { createMyProfile, getMyProfile, updateMyProfile, uploadPhoto } from '../services/profileService.js';
+import { FiBarChart2, FiClock, FiDollarSign, FiFileText, FiHash, FiHome, FiLock, FiMap, FiMapPin, FiPhone, FiBriefcase } from 'react-icons/fi';
+import { FormField } from '../../../shared/components/FormField.jsx';
 
 export function ProfilesPage() {
   const { user, role } = useAuth();
@@ -226,14 +228,50 @@ function PhotoField({ photoUrl, uploading, onChange }) {
 }
 
 function Field({ className = '', label, ...props }) {
-  const classes = className ? `field ${className}` : 'field';
+  return <FormField className={className} label={label} icon={getFieldIcon(props.name, props.type)} {...props} />;
+}
 
-  return (
-    <label className={classes}>
-      <span>{label}</span>
-      <input {...props} />
-    </label>
-  );
+function getFieldIcon(name, type) {
+  if (type === 'email') return <FiMail />;
+  if (type === 'password') return <FiLock />;
+  if (type === 'tel') return <FiPhone />;
+  if (type === 'search') return <FiFileText />;
+  if (type === 'number') {
+    if (name === 'yearsOfExperience') return <FiBarChart2 />;
+    if (name === 'hourlyRate') return <FiDollarSign />;
+    return <FiHash />;
+  }
+
+  switch (name) {
+    case 'description':
+      return <FiFileText />;
+    case 'offeredServices':
+      return <FiBriefcase />;
+    case 'workArea':
+      return <FiMapPin />;
+    case 'availability':
+      return <FiClock />;
+    case 'contactPhone':
+      return <FiPhone />;
+    case 'streetName':
+      return <FiMapPin />;
+    case 'streetNumber':
+      return <FiHash />;
+    case 'floor':
+      return <FiHome />;
+    case 'apartment':
+      return <FiHome />;
+    case 'postalCode':
+      return <FiHash />;
+    case 'city':
+      return <FiMapPin />;
+    case 'province':
+      return <FiMap />;
+    case 'hiringPreferences':
+      return <FiFileText />;
+    default:
+      return null;
+  }
 }
 
 function getInitialFormData(role) {
