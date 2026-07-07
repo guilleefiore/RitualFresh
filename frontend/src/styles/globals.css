@@ -11,11 +11,11 @@ body,
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: Inter, Roboto, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(45, 106, 79, 0.17), transparent 26%),
-    radial-gradient(circle at bottom right, rgba(233, 196, 106, 0.22), transparent 18%),
-    linear-gradient(180deg, #faf6ef 0%, #efe4d4 100%);
+    radial-gradient(circle at top left, rgba(21, 101, 192, 0.08), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(38, 166, 154, 0.1), transparent 18%),
+    var(--color-bg);
   color: var(--color-text);
 }
 
@@ -40,7 +40,7 @@ input:focus,
 select:focus,
 button:focus,
 a:focus {
-  outline: 3px solid rgba(45, 106, 79, 0.18);
+  outline: 3px solid rgba(21, 101, 192, 0.22);
   outline-offset: 2px;
 }
 
@@ -59,7 +59,7 @@ a:focus {
   padding: clamp(1.5rem, 4vw, 3rem);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(12px);
 }
@@ -73,7 +73,7 @@ a:focus {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.78rem;
-  color: var(--color-accent);
+  color: var(--color-primary);
   font-weight: 700;
 }
 

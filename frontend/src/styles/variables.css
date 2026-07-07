@@ -1,17 +1,20 @@
 /* Global design tokens for the app shell. Extend here before duplicating values in components. */
 :root {
-  --color-bg: #f5efe5;
+  --color-bg: #f5f7fa;
   --color-surface: #ffffff;
-  --color-surface-muted: #efe6d9;
-  --color-text: #201813;
-  --color-text-muted: #6d5d52;
-  --color-accent: #2d6a4f;
-  --color-accent-strong: #1b4332;
-  --color-accent-soft: #d9efe2;
-  --color-border: #ddcfbd;
-  --color-danger: #8f2d23;
-  --color-danger-soft: #f9ddd8;
-  --shadow-soft: 0 22px 60px rgba(32, 24, 19, 0.08);
+  --color-surface-muted: #e3f2fd;
+  --color-text: #1f1f1f;
+  --color-text-muted: #5f6368;
+  --color-primary: #1565c0;
+  --color-primary-dark: #0d47a1;
+  --color-secondary: #26a69a;
+  --color-accent: #1565c0;
+  --color-accent-strong: #0d47a1;
+  --color-accent-soft: #e3f2fd;
+  --color-border: #d6dde8;
+  --color-danger: #b3261e;
+  --color-danger-soft: #fce8e6;
+  --shadow-soft: 0 22px 60px rgba(31, 31, 31, 0.08);
   --radius-lg: 24px;
   --radius-md: 16px;
   --radius-sm: 12px;

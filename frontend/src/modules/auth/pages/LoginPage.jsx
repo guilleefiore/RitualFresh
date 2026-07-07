@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FcGoogle } from 'react-icons/fc';
+import { FiLock, FiMail } from 'react-icons/fi';
 import { useAuth } from '../hooks/useAuth.js';
 import { startGoogleLogin } from '../services/authService.js';
 import { AuthShell } from './components/AuthShell.jsx';
+import { FormField } from '../../../shared/components/FormField.jsx';
 
 function getHomePath(role) {
   if (role === 'CLIENT') return '/client/home';
@@ -19,6 +22,7 @@ export function LoginPage() {
     email: '',
     password: '',
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +82,8 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      title="Ingresar a RitualFresh"
+      title="Bienvenido nuevamente"
+      description="Inicia sesión para acceder a tu cuenta"
       footer={
         <>
           <span>¿No tenés cuenta?</span>
@@ -87,29 +92,27 @@ export function LoginPage() {
       }
     >
       <form className="auth-form" onSubmit={handleSubmit}>
-        <label className="field">
-          <span>Email</span>
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="ana@example.com"
-          />
-        </label>
+        <FormField
+          label="Correo electrónico"
+          icon={<FiMail />}
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="ana@example.com"
+        />
 
-        <label className="field">
-          <span>Contraseña</span>
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Ingrese su contraseña"
-          />
-        </label>
+        <FormField
+          label="Contraseña"
+          icon={<FiLock />}
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Ingrese su contraseña"
+        />
 
         {successMessage ? <p className="feedback feedback--success">{successMessage}</p> : null}
         {errorMessage ? <p className="feedback feedback--error">{errorMessage}</p> : null}
@@ -120,18 +123,39 @@ export function LoginPage() {
           </p>
         ) : null}
 
+        <div className="auth-form__options">
+          <label className="checkbox">
+            <input
+              name="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
+            />
+            <span>Recordarme</span>
+          </label>
+
+          <Link className="auth-form__forgot" to="/password-reset">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
+
         <button className="button button--primary" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
         </button>
 
-        <button className="button button--ghost" type="button" onClick={startGoogleLogin}>
-          Continuar con Google
-        </button>
-      </form>
+        <div className="auth-divider" aria-hidden="true">
+          <span />
+          <span>o continuar con</span>
+          <span />
+        </div>
 
-      <nav className="auth-links" aria-label="Accesos de autenticación">
-        <Link to="/password-reset">Olvidé mi contraseña</Link>
-      </nav>
+        <div className="social-buttons">
+          <button className="button button--social" type="button" onClick={startGoogleLogin}>
+            <FcGoogle className="social-button__icon" />
+            <span>Google</span>
+          </button>
+        </div>
+      </form>
     </AuthShell>
   );
 }

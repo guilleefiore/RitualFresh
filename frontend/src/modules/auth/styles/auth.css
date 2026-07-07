@@ -26,6 +26,51 @@
   gap: var(--space-4);
 }
 
+.auth-form__options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.checkbox--terms {
+  align-items: flex-start;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.checkbox input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.checkbox--terms input {
+  margin-top: 0.2rem;
+}
+
+.checkbox__emphasis {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.auth-form__forgot {
+  color: var(--color-accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: right;
+}
+
 .auth-form--grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -52,6 +97,66 @@
 
 .field--full {
   grid-column: 1 / -1;
+}
+
+.account-type {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.account-type legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.account-type__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.account-type__card {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 1rem 1rem 0.95rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.account-type__card:hover {
+  transform: translateY(-1px);
+}
+
+.account-type__card--selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+
+.account-type__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-accent);
+}
+
+.account-type__title {
+  font-weight: 800;
+}
+
+.account-type__description {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
 
 .feedback {
@@ -99,10 +204,67 @@
   border: 1px solid var(--color-border);
 }
 
+.button--google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.social-buttons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+.button--social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.social-button__icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.auth-divider span:first-child,
+.auth-divider span:last-child {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.auth-divider span:nth-child(2) {
+  white-space: nowrap;
+}
+
+.google-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}
+
 .auth-links,
 .auth-footer {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-3);
   margin-top: var(--space-5);
 }
@@ -170,5 +332,18 @@
   .auth-form--grid,
   .info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .account-type__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-form__options {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .auth-form__forgot {
+    text-align: left;
   }
 }

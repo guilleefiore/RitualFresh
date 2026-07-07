@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { registerUser } from '../services/authService.js';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthShell } from './components/AuthShell.jsx';
+import { FiLock, FiMail, FiUser } from 'react-icons/fi';
+import { FormField } from '../../../shared/components/FormField.jsx';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_UPPERCASE_PATTERN = /[A-Z]/;
@@ -9,18 +10,16 @@ const PASSWORD_LOWERCASE_PATTERN = /[a-z]/;
 const PASSWORD_DIGIT_PATTERN = /\d/;
 
 const INITIAL_FORM = {
-  firstName: '',
-  lastName: '',
+  fullName: '',
   email: '',
   password: '',
   confirmPassword: '',
-  role: 'CLIENT',
 };
 
 export function RegisterPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleChange(event) {
@@ -41,29 +40,19 @@ export function RegisterPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage('');
-    setSuccessMessage('');
 
-    const requiredFields = [
-      formData.firstName,
-      formData.lastName,
-      formData.email,
-      formData.password,
-      formData.confirmPassword,
-      formData.role,
-    ];
-
-    if (requiredFields.some((value) => !String(value).trim())) {
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
       setErrorMessage('Debe completar todos los campos obligatorios.');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMessage('Las contraseñas no coinciden.');
       return;
     }
 
     if (!EMAIL_PATTERN.test(formData.email.trim())) {
       setErrorMessage('Ingresá un correo electrónico válido.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage('Las contraseñas no coinciden.');
       return;
     }
 
@@ -73,111 +62,80 @@ export function RegisterPage() {
     }
 
     setIsSubmitting(true);
-
-    try {
-      const response = await registerUser({
-        ...formData,
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+    navigate('/register/role', {
+      state: {
+        fullName: formData.fullName.trim(),
         email: formData.email.trim(),
-      });
-
-      setSuccessMessage(response.message);
-      setFormData(INITIAL_FORM);
-    } catch (error) {
-      setErrorMessage(error.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      },
+    });
+    setIsSubmitting(false);
   }
 
   return (
     <AuthShell
-      eyebrow="Registro"
-      title="Crear cuenta pública"
+      title="Crear cuenta"
+      description="Accede a todas las funciones como cliente o trabajador profesional"
       footer={
         <>
-          <span>¿Ya tenés cuenta?</span>
-          <Link to="/login">Ir al inicio de sesión</Link>
+          <span>¿Ya tienes cuenta?</span>
+          <Link to="/login">Iniciar sesión</Link>
         </>
       }
     >
-      <form className="auth-form auth-form--grid" onSubmit={handleSubmit}>
-        <label className="field">
-          <span>Nombre</span>
-          <input
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            autoComplete="given-name"
-            placeholder="Nombre"
-          />
-        </label>
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <FormField
+          className="field--full"
+          label="Nombre completo"
+          icon={<FiUser />}
+          name="fullName"
+          value={formData.fullName}
+          onChange={handleChange}
+          autoComplete="name"
+          placeholder="Ingrese su nombre completo"
+        />
 
-        <label className="field">
-          <span>Apellido</span>
-          <input
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            autoComplete="family-name"
-            placeholder="Apellido"
-          />
-        </label>
+        <FormField
+          className="field--full"
+          label="Correo electrónico"
+          icon={<FiMail />}
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          autoComplete="email"
+          placeholder="usuario@ejemplo.com"
+        />
 
-        <label className="field field--full">
-          <span>Email</span>
-          <input
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            autoComplete="email"
-            placeholder="tu@email.com"
-          />
-        </label>
+        <FormField
+          className="field--full"
+          label="Contraseña"
+          icon={<FiLock />}
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+          autoComplete="new-password"
+          placeholder="Crea una contraseña segura"
+        />
 
-        <label className="field">
-          <span>Contraseña</span>
-          <input
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            autoComplete="new-password"
-            placeholder="Contraseña"
-          />
-        </label>
+        <FormField
+          className="field--full"
+          label="Confirmar contraseña"
+          icon={<FiLock />}
+          name="confirmPassword"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          autoComplete="new-password"
+          placeholder="Confirmar contraseña"
+        />
 
-        <label className="field">
-          <span>Confirmar contraseña</span>
-          <input
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            autoComplete="new-password"
-            placeholder="Confirmar"
-          />
-        </label>
-
-        <p className="inline-help field--full">
-          La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.
-        </p>
-
-        <label className="field field--full">
-          <span>Tipo de cuenta</span>
-          <select name="role" value={formData.role} onChange={handleChange}>
-            <option value="CLIENT">Cliente</option>
-            <option value="WORKER">Trabajador</option>
-          </select>
-        </label>
-
-        {successMessage ? <p className="feedback feedback--success field--full">{successMessage}</p> : null}
         {errorMessage ? <p className="feedback feedback--error field--full">{errorMessage}</p> : null}
 
         <button className="button button--primary field--full" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Registrando...' : 'Registrarme'}
+          {isSubmitting ? 'Continuando...' : 'Continuar'}
         </button>
       </form>
     </AuthShell>
