@@ -65,11 +65,9 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
    - Request ejemplo:
      ```json
       {
-        "firstName": "Guillermina",
-        "lastName": "Fiore",
         "email": "guillermina.test@example.com",
-        "password": "clave123",
-        "confirmPassword": "clave123",
+        "password": "Clave123",
+        "confirmPassword": "Clave123",
         "role": "CLIENT"
       }
      ```
@@ -77,7 +75,7 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
    - Verifica que la API ya no exponga el token de validación en la respuesta.
 2. Mailtrap: correo `RitualFresh - Validacion de cuenta`
    - Verifica recepción del correo en el sandbox.
-   - Verifica que el cuerpo incluya el link `GET /api/users/validation?token=...`.
+   - Verifica que el cuerpo incluya el link del frontend `/validation?token=...`.
 3. `POST /api/users/validation/resend`
    - Request ejemplo:
      ```json
@@ -89,9 +87,9 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
    - Verifica que el token anterior deje de ser válido cuando se reenvía uno nuevo.
 4. Mailtrap: correo `RitualFresh - Validacion de cuenta`
    - Verifica recepción del correo reenviado en el sandbox.
-   - Verifica que el cuerpo incluya el nuevo link `GET /api/users/validation?token=...`.
-5. `GET /api/users/validation?token=...`
-   - Verifica activación de la cuenta.
+   - Verifica que el cuerpo incluya el nuevo link del frontend `/validation?token=...`.
+5. `GET /validation?token=...` en frontend
+   - Verifica que la pantalla invoque al backend para activar la cuenta.
    - Resultado esperado: `accountStatus = ACTIVE`.
 6. `POST /api/users/login`
    - Request ejemplo:
@@ -133,15 +131,18 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
     - Verifica autoeliminación lógica de la cuenta autenticada.
     - Verifica que la respuesta expire la cookie de sesión.
 13. `POST /api/users/login` con la contraseña usada antes de eliminar la cuenta
-    - Verifica rechazo porque la cuenta quedó en estado `DELETED`.
-14. `GET /api/profiles/me`
-    - Verifica acceso autenticado usando la cookie de sesión.
-15. `POST /api/profiles/clientes` o `POST /api/profiles/trabajadores`
-    - Verifica persistencia real del perfil asociado al usuario autenticado.
-16. `POST /api/users/logout`
-    - Verifica cierre de sesión y rechazo posterior del mismo token.
-17. `GET /api/admin/users`
-    - Verifica acceso sólo con un usuario `ADMIN` autenticado en una sesión separada.
+     - Verifica rechazo porque la cuenta quedó en estado `DELETED`.
+14. `POST /api/users/register` con el mismo correo eliminado
+    - Verifica que el backend reutilice la cuenta existente y la deje en `PENDING_VALIDATION`.
+    - Verifica que se emita un nuevo correo de validación.
+15. `GET /api/profiles/me`
+     - Verifica acceso autenticado usando la cookie de sesión.
+16. `POST /api/profiles/clientes` o `POST /api/profiles/trabajadores`
+     - Verifica persistencia real del perfil asociado al usuario autenticado.
+17. `POST /api/users/logout`
+     - Verifica cierre de sesión y rechazo posterior del mismo token.
+18. `GET /api/admin/users`
+     - Verifica acceso sólo con un usuario `ADMIN` autenticado en una sesión separada.
 
 ##### Flujo manual para login con Google (OAuth 2.0)
 
@@ -155,10 +156,12 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
 7. Verificar que el usuario sea redirigido al home correspondiente a su rol.
 8. Repetir con una cuenta de Google cuyo correo ya exista en la base de datos (cuenta pendiente o activa)
    y verificar que se reutilice correctamente.
-9. Repetir con una cuenta de Google cuyo correo ya exista pero con estado `DELETED` o `SUSPENDED`
-   y verificar que el login sea rechazado.
-10. Si las credenciales OAuth no son válidas, verificar que se redirija a `/login?oauth=error` con un mensaje
-    de error visible para el usuario.
+9. Repetir con una cuenta de Google cuyo correo ya exista pero con estado `DELETED`
+   y verificar que la cuenta se reactive y genere sesión.
+10. Repetir con una cuenta de Google cuyo correo ya exista pero con estado `SUSPENDED`
+    y verificar que el login sea rechazado.
+11. Si las credenciales OAuth no son válidas, verificar que se redirija a `/login?oauth=error` con un mensaje
+     de error visible para el usuario.
 
 ##### Flujo para selección de rol post-Google OAuth (usuario nuevo)
 
@@ -267,7 +270,8 @@ Cobertura actual implementada en backend:
   - `ADMIN` contra `/api/admin/**`
 - `UserServiceTest`
   - registro, validación, login y recuperación de contraseña
-  - `loginWithGoogle` para cuentas nuevas y pendientes
+  - re-registro de cuentas `DELETED`
+  - `loginWithGoogle` para cuentas nuevas, pendientes y eliminadas
 - `ProfileServiceTest`
   - reglas de negocio y restricciones funcionales de perfiles
 - `AdminServiceTest`

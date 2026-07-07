@@ -71,6 +71,8 @@ public class User {
         User user = new User();
         user.firstName = data.firstName();
         user.lastName = data.lastName();
+        user.documentNumber = "";
+        user.phoneNumber = "";
         user.email = data.email();
         user.passwordHash = data.passwordHash();
         user.role = data.role();
@@ -92,6 +94,39 @@ public class User {
         user.accountStatus = AccountStatus.ACTIVE;
         user.createdAt = data.createdAt();
         return user;
+    }
+
+    // Reutiliza una cuenta dada de baja para permitir registrarse nuevamente con el mismo email.
+    public void restoreRegistration(RegistrationData data) {
+        this.firstName = data.firstName();
+        this.lastName = data.lastName();
+        this.documentNumber = "";
+        this.phoneNumber = "";
+        this.passwordHash = data.passwordHash();
+        this.role = data.role();
+        this.accountStatus = AccountStatus.PENDING_VALIDATION;
+        this.createdAt = data.createdAt();
+        this.deactivatedAt = null;
+        this.passwordResetToken = null;
+        this.passwordResetTokenExpiresAt = null;
+        startAccountValidation(data.accountValidationToken(), data.accountValidationTokenExpiresAt());
+    }
+
+    // Reactiva una cuenta dada de baja cuando el usuario vuelve con Google.
+    public void restoreOAuthAccount(OAuthAccountData data) {
+        this.firstName = data.firstName();
+        this.lastName = data.lastName();
+        this.documentNumber = data.documentNumber();
+        this.phoneNumber = data.phoneNumber();
+        this.passwordHash = data.passwordHash();
+        this.role = data.role();
+        this.accountStatus = AccountStatus.ACTIVE;
+        this.createdAt = data.createdAt();
+        this.deactivatedAt = null;
+        this.accountValidationToken = null;
+        this.accountValidationTokenExpiresAt = null;
+        this.passwordResetToken = null;
+        this.passwordResetTokenExpiresAt = null;
     }
 
     // Permite simular el autoincremental de la BD en repositorios en memoria.

@@ -60,49 +60,44 @@ class UserServiceTest {
     }
 
     @Test
-    void us01M01Rf01AcceptsArgentineDniWithDotsAndStoresItNormalized() {
+    void us01M01Rf01RegistersManualAccountWithoutProfileContactData() {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
                 "guillermina.dni@example.com",
                 "Clave123",
                 "Clave123",
                 UserRole.CLIENT));
 
-        assertEquals("44984633", result.user().getDocumentNumber());
+        assertEquals("", result.user().getDocumentNumber());
+        assertEquals("", result.user().getPhoneNumber());
+        assertEquals("Pendiente", result.user().getFirstName());
+        assertEquals("Completar", result.user().getLastName());
     }
 
     @Test
-    void us01M01Rf01RejectsInvalidArgentineDniFormat() {
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
-                "guillermina.dni.invalido@example.com",
-                "Clave123",
-                "Clave123",
-                UserRole.CLIENT)));
+    void us01M01Rf01AllowsRegisteringAgainWhenPreviousAccountWasDeleted() {
+        RegisterUserResult original = registerClient();
+        userService.validateAccount(original.accountValidationToken());
+        User deletedUser = userRepository.findByEmail("guillermina@example.com").orElseThrow();
+        Long originalId = deletedUser.getId();
+        deletedUser.deactivate();
+        userRepository.save(deletedUser);
 
-        assertEquals("El DNI debe tener formato argentino valido, con o sin puntos.", exception.getMessage());
-    }
+        RegisterUserResult restored = userService.registerUser(new RegisterUserRequest(
+                "guillermina@example.com",
+                "NuevaClave123",
+                "NuevaClave123",
+                UserRole.WORKER));
 
-    @Test
-    void us01M01Rf01RejectsInvalidPhoneNumberFormat() {
-        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
-                "guillermina.telefono@example.com",
-                "Clave123",
-                "Clave123",
-                UserRole.CLIENT)));
-
-        assertEquals("El telefono ingresado no posee un formato valido.", exception.getMessage());
+        assertEquals(originalId, restored.user().getId());
+        assertEquals(AccountStatus.PENDING_VALIDATION, restored.user().getAccountStatus());
+        assertEquals(UserRole.WORKER, restored.user().getRole());
+        assertEquals("Pendiente", restored.user().getFirstName());
+        assertEquals(2, accountEmailService.getValidationTokens().size());
     }
 
     @Test
     void us01M01Rf01RejectsWeakPassword() {
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
                 "guillermina.password@example.com",
                 "clave",
                 "clave",
@@ -116,8 +111,6 @@ class UserServiceTest {
         registerClient();
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
-                "Otra",
-                "Persona",
                 "guillermina@example.com",
                 "Clave123",
                 "Clave123",
@@ -129,8 +122,6 @@ class UserServiceTest {
     @Test
     void us01M01Rf01PreventsRegisteringWithDifferentPasswords() {
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
                 "guillermina@example.com",
                 "Clave123",
                 "OtraClave123",
@@ -211,6 +202,27 @@ class UserServiceTest {
     }
 
     @Test
+    void us02M01Rf02RestoresDeletedAccountWhenLoggingInWithGoogle() {
+        RegisterUserResult result = registerClient();
+        User deletedUser = result.user();
+        Long originalId = deletedUser.getId();
+        deletedUser.deactivate();
+        userRepository.save(deletedUser);
+
+        LoginResult loginResult = userService.loginWithGoogle(new OAuth2ProfileData(
+                "guillermina@example.com",
+                "Google",
+                "User"));
+
+        User restored = userRepository.findByEmail("guillermina@example.com").orElseThrow();
+        assertEquals(originalId, restored.getId());
+        assertEquals(AccountStatus.ACTIVE, restored.getAccountStatus());
+        assertEquals(UserRole.CLIENT, restored.getRole());
+        assertEquals("Google", restored.getFirstName());
+        assertNotNull(loginResult.sessionToken());
+    }
+
+    @Test
     void us03M01Rf03GeneratesResetTokenAndAllowsPasswordChange() {
         RegisterUserResult result = registerClient();
         userService.validateAccount(result.accountValidationToken());
@@ -270,8 +282,6 @@ class UserServiceTest {
         LoginResult firstSession = userService.login(new LoginRequest("guillermina@example.com", "Clave123"));
 
         RegisterUserResult secondUser = userService.registerUser(new RegisterUserRequest(
-                "Otra",
-                "Persona",
                 "otra@example.com",
                 "Clave123",
                 "Clave123",
@@ -323,8 +333,6 @@ class UserServiceTest {
 
     private RegisterUserResult registerClient() {
         return userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
                 "guillermina@example.com",
                 "Clave123",
                 "Clave123",

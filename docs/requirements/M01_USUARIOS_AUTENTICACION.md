@@ -29,12 +29,16 @@ La base de `M01` ya se encuentra implementada en el backend con:
 
 ## Reglas clave
 
-- El correo electrónico debe ser único.
+- El correo electrónico debe ser único entre cuentas vigentes.
 - El registro admite `CLIENT` o `WORKER`.
+- El registro público solicita correo electrónico, contraseña, repetición de contraseña y rol; los datos de contacto detallados y de perfil se completan en el módulo de perfiles.
 - La cuenta queda pendiente hasta validar el enlace/token.
 - El inicio de sesión exige cuenta activa.
 - La recuperación de contraseña requiere un correo existente.
 - El registro público no permite crear usuarios `ADMIN`.
+- Una cuenta `DELETED` puede volver a registrarse con el mismo correo: el backend reutiliza el registro existente y lo deja en `PENDING_VALIDATION`.
+- Una cuenta `DELETED` que vuelve por Google OAuth se reactiva como cuenta activa y genera sesión.
+- Una cuenta `SUSPENDED` no puede iniciar sesión ni re-registrarse con el mismo correo mientras conserve ese estado.
 - Los endpoints protegidos utilizan cookie `HttpOnly` como mecanismo principal y aceptan `Authorization: Bearer <sessionToken>` como compatibilidad técnica.
 
 ## Criterios de aceptación iniciales
@@ -61,8 +65,10 @@ La base de `M01` ya se encuentra implementada en el backend con:
 
 ## Cambios recientes
 
-- Registro simplificado: se eliminaron los campos `documentNumber` y `phoneNumber` del formulario de registro y de los DTOs `RegisterUserApiRequest` y `RegisterUserRequest`.
+- Registro simplificado: el formulario público de registro pide solo `email`, `password`, `confirmPassword` y `role`; los datos personales quedan para el módulo de perfiles.
+- Re-registro de cuentas eliminadas: el estado `DELETED` no bloquea definitivamente el correo; el sistema reactiva la cuenta existente según el flujo usado.
 - Login con Google para nuevos usuarios: tras la autenticación externa, el usuario es redirigido a `/choose-role` para seleccionar `CLIENT` o `WORKER` antes de acceder al home.
+- Validación de cuenta: el correo de activación apunta al frontend en `/validation?token=...` y la pantalla de reenvío vive en `/validation/resend`.
 - El endpoint `PUT /api/users/me/role` permite actualizar el rol del usuario autenticado (body: `{"role": "WORKER"}` o `{"role": "CLIENT"}`).
 
 ## Criterios de aceptación iniciales

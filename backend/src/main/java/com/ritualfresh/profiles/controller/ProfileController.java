@@ -37,6 +37,8 @@ public class ProfileController {
             @Valid @RequestBody CreateClientProfileApiRequest request) {
         extractSessionToken(authentication);
         ProfileApiResponse profile = ProfileApiResponse.from(profileService.createClientProfile(new CreateClientProfileRequest(
+                request.firstName(),
+                request.lastName(),
                 request.photoUrl(),
                 request.contactPhone(),
                 request.streetName(),
@@ -59,7 +61,10 @@ public class ProfileController {
             @Valid @RequestBody CreateWorkerProfileApiRequest request) {
         extractSessionToken(authentication);
         ProfileApiResponse profile = ProfileApiResponse.from(profileService.createWorkerProfile(new CreateWorkerProfileRequest(
+                request.firstName(),
+                request.lastName(),
                 request.photoUrl(),
+                request.contactPhone(),
                 request.description(),
                 request.yearsOfExperience(),
                 request.offeredServices(),
@@ -84,6 +89,8 @@ public class ProfileController {
             @Valid @RequestBody UpdateClientProfileApiRequest request) {
         extractSessionToken(authentication);
         ProfileApiResponse profile = ProfileApiResponse.from(profileService.updateClientProfile(new UpdateClientProfileRequest(
+                request.firstName(),
+                request.lastName(),
                 request.photoUrl(),
                 request.contactPhone(),
                 request.streetName(),
@@ -105,7 +112,10 @@ public class ProfileController {
             @Valid @RequestBody UpdateWorkerProfileApiRequest request) {
         extractSessionToken(authentication);
         ProfileApiResponse profile = ProfileApiResponse.from(profileService.updateWorkerProfile(new UpdateWorkerProfileRequest(
+                request.firstName(),
+                request.lastName(),
                 request.photoUrl(),
+                request.contactPhone(),
                 request.description(),
                 request.yearsOfExperience(),
                 request.offeredServices(),

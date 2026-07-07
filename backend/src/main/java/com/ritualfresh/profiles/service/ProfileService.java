@@ -41,6 +41,10 @@ public class ProfileService {
         User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.CLIENT, "El rol del usuario no permite crear un perfil de cliente.");
         validateUserWithoutProfile(user.getId());
+        userService.updateAuthenticatedUserProfileData(
+                request.firstName(),
+                request.lastName(),
+                validatePhoneNumber(request.contactPhone()));
 
         ClientProfile profile = new ClientProfile(
                 user,
@@ -66,6 +70,10 @@ public class ProfileService {
         User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.WORKER, "El rol del usuario no permite crear un perfil de trabajador.");
         validateUserWithoutProfile(user.getId());
+        userService.updateAuthenticatedUserProfileData(
+                request.firstName(),
+                request.lastName(),
+                validatePhoneNumber(request.contactPhone()));
 
         WorkerProfile profile = new WorkerProfile(
                 user,
@@ -103,6 +111,10 @@ public class ProfileService {
 
         User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.CLIENT, "El rol del usuario no permite editar un perfil de cliente.");
+        userService.updateAuthenticatedUserProfileData(
+                request.firstName(),
+                request.lastName(),
+                validatePhoneNumber(request.contactPhone()));
 
         ClientProfile profile = clientProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil de cliente."));
@@ -131,6 +143,10 @@ public class ProfileService {
 
         User user = userService.getAuthenticatedUser();
         validateRole(user, UserRole.WORKER, "El rol del usuario no permite editar un perfil de trabajador.");
+        userService.updateAuthenticatedUserProfileData(
+                request.firstName(),
+                request.lastName(),
+                validatePhoneNumber(request.contactPhone()));
 
         WorkerProfile profile = workerProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil de trabajador."));
@@ -156,6 +172,8 @@ public class ProfileService {
         if (request == null) {
             throw new BusinessRuleException("Debe completar los datos del perfil.");
         }
+
+        validatePhoneNumber(request.contactPhone());
     }
 
     // Verifica que el usuario tenga el rol esperado para la operación.

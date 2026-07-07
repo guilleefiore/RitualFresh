@@ -16,9 +16,6 @@ public class MailProperties {
     // Direccion visible como remitente de los correos.
     private String from = "no-reply@ritualfresh.local";
 
-    // URL publica del backend para armar el link de validacion.
-    private String backendBaseUrl = "http://localhost:8080";
-
-    // URL publica del frontend para armar el link de recuperacion.
+    // URL publica del frontend para armar los links visibles para el usuario.
     private String frontendBaseUrl = "http://localhost:5173";
 }

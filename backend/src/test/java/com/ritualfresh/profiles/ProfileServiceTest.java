@@ -71,6 +71,8 @@ class ProfileServiceTest {
         LoginResult session = registerValidateAndLoginClient();
         authenticate(session);
         CreateClientProfileRequest request = new CreateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
                 null,
                 "abc",
                 "San Martin",
@@ -92,6 +94,8 @@ class ProfileServiceTest {
         LoginResult session = registerValidateAndLoginClient();
         authenticate(session);
         CreateClientProfileRequest request = new CreateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
                 null,
                 "2615555555",
                 "!",
@@ -115,7 +119,10 @@ class ProfileServiceTest {
         profileService.createWorkerProfile(validWorkerRequest());
 
         UserProfileResult updated = profileService.updateWorkerProfile(new UpdateWorkerProfileRequest(
+                "Joaquin",
+                "Becerra",
                 "https://cdn.example.com/trabajador.png",
+                "2614444444",
                 "Limpieza general, profunda y mantenimiento preventivo",
                 4,
                 "Limpieza general, limpieza profunda, mantenimiento",
@@ -139,7 +146,10 @@ class ProfileServiceTest {
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createWorkerProfile(
                 new CreateWorkerProfileRequest(
+                        "Joaquin",
+                        "Becerra",
                         null,
+                        "2614444444",
                         "Limpieza profunda",
                         -1,
                         "Limpieza profunda",
@@ -157,7 +167,10 @@ class ProfileServiceTest {
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createWorkerProfile(
                 new CreateWorkerProfileRequest(
+                        "Joaquin",
+                        "Becerra",
                         null,
+                        "2614444444",
                         "Limpieza profunda",
                         2,
                         "Limpieza profunda",
@@ -209,30 +222,26 @@ class ProfileServiceTest {
 
     private User registerAndValidateClient() {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
-                "Guillermina",
-                "Fiore",
                 "guillermina@example.com",
                 "Clave123",
                 "Clave123",
                 UserRole.CLIENT));
-
         return userService.validateAccount(result.accountValidationToken());
     }
 
     private User registerAndValidateWorker() {
         RegisterUserResult result = userService.registerUser(new RegisterUserRequest(
-                "Joaquin",
-                "Becerra",
                 "joaquin@example.com",
                 "Clave123",
                 "Clave123",
                 UserRole.WORKER));
-
         return userService.validateAccount(result.accountValidationToken());
     }
 
     private CreateClientProfileRequest validClientRequest() {
         return new CreateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
                 "https://cdn.example.com/cliente.png",
                 "2615555555",
                 "San Martin",
@@ -247,7 +256,10 @@ class ProfileServiceTest {
 
     private CreateWorkerProfileRequest validWorkerRequest() {
         return new CreateWorkerProfileRequest(
+                "Joaquin",
+                "Becerra",
                 null,
+                "2614444444",
                 "Limpieza profunda y mantenimiento del hogar",
                 3,
                 "Limpieza general y profunda",

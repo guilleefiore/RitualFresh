@@ -10,6 +10,7 @@ export function AccountValidationPage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    // Evita actualizar estado si el usuario sale de la pantalla antes de terminar.
     let active = true;
 
     async function runValidation() {
@@ -42,22 +43,35 @@ export function AccountValidationPage() {
 
   return (
     <AuthShell
-      eyebrow="Validación"
-      title="Validar cuenta"
+      title="Validación de cuenta"
       footer={
-        status === 'success' ? (
-          <Link to="/login">Ir al inicio de sesión</Link>
-        ) : (
-          <Link to="/validation/resend">Reenviar validación</Link>
-        )
+        <div className="auth-footer">
+          {status === 'success' ? <Link to="/login">Ir al inicio de sesión</Link> : null}
+          {(status === 'error' || !token) ? <Link to="/validation/resend">Reenviar validación</Link> : null}
+        </div>
       }
     >
       <section className="status-panel" aria-live="polite">
-        <p className="status-panel__token">Token: {token || 'No informado'}</p>
+        <p className="status-panel__lead">
+          {token
+            ? 'Estamos verificando el enlace recibido por correo electrónico.'
+            : 'Abrí esta página desde el enlace enviado a tu correo electrónico.'}
+        </p>
+
         {status === 'loading' ? <p>Validando cuenta...</p> : null}
         {message ? (
           <p className={status === 'success' ? 'feedback feedback--success' : 'feedback feedback--error'}>
             {message}
+          </p>
+        ) : null}
+
+        {status === 'success' ? (
+          <p className="inline-help">La cuenta ya quedó activa. Ahora podés iniciar sesión.</p>
+        ) : null}
+
+        {status === 'error' && token ? (
+          <p className="inline-help">
+            El enlace puede haber vencido o ya no ser válido. Podés solicitar uno nuevo.
           </p>
         ) : null}
       </section>
