@@ -116,6 +116,6 @@ Endpoints utilizados:
 6. Reingresar y confirmar precarga en modo edición.
 7. Modificar un dato y validar persistencia.
 
-## Limitación actual conocida
+## Estado de sesión
 
-La sesión frontend todavía no se rehidrata automáticamente desde la cookie al refrescar la página completa. Para pruebas manuales, puede ser necesario volver a iniciar sesión luego de un reload duro del navegador.
+La sesión frontend se rehidrata desde la cookie mediante `GET /api/users/me` al iniciar la app. Si la cookie expiró o fue invalidada, el usuario vuelve a `/login`.

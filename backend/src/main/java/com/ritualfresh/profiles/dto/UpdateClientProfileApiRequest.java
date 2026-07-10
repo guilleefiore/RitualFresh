@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 public record UpdateClientProfileApiRequest(
         @NotBlank String firstName,
         @NotBlank String lastName,
-        String photoUrl,
+        @NotBlank String photoUrl,
         @NotBlank String contactPhone,
         @NotBlank String streetName,
         @NotBlank String streetNumber,

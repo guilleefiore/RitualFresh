@@ -39,6 +39,7 @@ La base de `M01` ya se encuentra implementada en el backend con:
 - Una cuenta `DELETED` puede volver a registrarse con el mismo correo: el backend reutiliza el registro existente y lo deja en `PENDING_VALIDATION`.
 - Una cuenta `DELETED` que vuelve por Google OAuth se reactiva como cuenta activa y genera sesión.
 - Una cuenta `SUSPENDED` no puede iniciar sesión ni re-registrarse con el mismo correo mientras conserve ese estado.
+- El rol no puede cambiarse si el usuario ya posee un perfil creado; la selección del mismo rol es idempotente para el onboarding post-Google.
 - Los endpoints protegidos utilizan cookie `HttpOnly` como mecanismo principal y aceptan `Authorization: Bearer <sessionToken>` como compatibilidad técnica.
 
 ## Criterios de aceptación iniciales
@@ -69,7 +70,7 @@ La base de `M01` ya se encuentra implementada en el backend con:
 - Re-registro de cuentas eliminadas: el estado `DELETED` no bloquea definitivamente el correo; el sistema reactiva la cuenta existente según el flujo usado.
 - Login con Google para nuevos usuarios: tras la autenticación externa, el usuario es redirigido a `/choose-role` para seleccionar `CLIENT` o `WORKER` antes de acceder al home.
 - Validación de cuenta: el correo de activación apunta al frontend en `/validation?token=...` y la pantalla de reenvío vive en `/validation/resend`.
-- El endpoint `PUT /api/users/me/role` permite actualizar el rol del usuario autenticado (body: `{"role": "WORKER"}` o `{"role": "CLIENT"}`).
+- El endpoint `PUT /api/users/me/role` permite actualizar el rol del usuario autenticado sólo si todavía no creó perfil (body: `{"role": "WORKER"}` o `{"role": "CLIENT"}`).
 
 ## Criterios de aceptación iniciales
 

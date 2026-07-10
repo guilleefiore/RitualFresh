@@ -16,6 +16,8 @@ import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.security.PasswordSecurity;
 import com.ritualfresh.notifications.service.AccountEmailService;
+import com.ritualfresh.profiles.repository.ClientProfileRepository;
+import com.ritualfresh.profiles.repository.WorkerProfileRepository;
 import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +59,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
     private final AccountEmailService accountEmailService;
+    private final ClientProfileRepository clientProfileRepository;
+    private final WorkerProfileRepository workerProfileRepository;
 
     @Transactional
     // Registra un usuario nuevo, valida los datos y deja la cuenta pendiente de validacion.
@@ -170,6 +174,11 @@ public class UserService {
         String lastName = normalizeProfilePart(profileData.lastName(), "Google");
         String documentNumber = generateSyntheticDocumentNumber(normalizedEmail);
         String phoneNumber = generateSyntheticPhoneNumber(normalizedEmail);
+        java.util.Optional<User> existingUser = userRepository.findByEmail(normalizedEmail);
+        UserRole oauthRole = existingUser
+                .filter(user -> user.getAccountStatus() == AccountStatus.DELETED)
+                .map(this::roleForRestoredDeletedAccount)
+                .orElse(UserRole.CLIENT);
         User.OAuthAccountData oauthAccountData = new User.OAuthAccountData(
                 firstName,
                 lastName,
@@ -177,10 +186,10 @@ public class UserService {
                 phoneNumber,
                 normalizedEmail,
                 PasswordSecurity.generateHash(UUID.randomUUID().toString()),
-                UserRole.CLIENT,
+                oauthRole,
                 LocalDateTime.now());
         boolean[] isNewUser = {false};
-        User user = userRepository.findByEmail(normalizedEmail).orElseGet(() -> {
+        User user = existingUser.orElseGet(() -> {
             isNewUser[0] = true;
             return User.oauthAccount(oauthAccountData);
         });
@@ -219,7 +228,11 @@ public class UserService {
 
         User user = session.getUser();
         if (user.getRole() == newRole) {
-            throw new BusinessRuleException("El usuario ya posee el rol seleccionado.");
+            return new LoginResult(user, session.getToken(), session.getExpiresAt());
+        }
+
+        if (hasAnyProfile(user.getId())) {
+            throw new BusinessRuleException("No puede cambiar el rol porque ya posee un perfil creado.");
         }
 
         user.setRole(newRole);
@@ -395,19 +408,26 @@ public class UserService {
             throw new BusinessRuleException("La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero.");
         }
 
-        if (userRepository.findByEmail(request.email())
-                .filter(user -> user.getAccountStatus() != AccountStatus.DELETED)
-                .isPresent()) {
-            throw new BusinessRuleException("El correo ya se encuentra registrado.");
+        if (request.role() != UserRole.CLIENT && request.role() != UserRole.WORKER) {
+            throw new BusinessRuleException("Debe seleccionar el rol cliente o trabajador.");
+        }
+
+        java.util.Optional<User> existingUser = userRepository.findByEmail(request.email());
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+            if (user.getAccountStatus() != AccountStatus.DELETED) {
+                throw new BusinessRuleException("El correo ya se encuentra registrado.");
+            }
+
+            if (user.getRole() != request.role() && hasAnyProfile(user.getId())) {
+                throw new BusinessRuleException("No puede cambiar el rol porque ya posee un perfil creado.");
+            }
         }
 
         if (!request.password().equals(request.confirmPassword())) {
             throw new BusinessRuleException("Las contrasenas no coinciden.");
         }
 
-        if (request.role() != UserRole.CLIENT && request.role() != UserRole.WORKER) {
-            throw new BusinessRuleException("Debe seleccionar el rol cliente o trabajador.");
-        }
     }
 
     @Transactional
@@ -462,6 +482,30 @@ public class UserService {
         if (!request.password().equals(request.confirmPassword())) {
             throw new BusinessRuleException("Las contrasenas no coinciden.");
         }
+
+        if (!isStrongPassword(request.password())) {
+            throw new BusinessRuleException("La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero.");
+        }
+    }
+
+    private boolean hasAnyProfile(Long userId) {
+        return userId != null
+                && (clientProfileRepository.existsByUserId(userId)
+                || workerProfileRepository.existsByUserId(userId));
+    }
+
+    private UserRole roleForRestoredDeletedAccount(User user) {
+        if (user.getId() != null) {
+            if (workerProfileRepository.existsByUserId(user.getId())) {
+                return UserRole.WORKER;
+            }
+
+            if (clientProfileRepository.existsByUserId(user.getId())) {
+                return UserRole.CLIENT;
+            }
+        }
+
+        return user.getRole() == UserRole.WORKER ? UserRole.WORKER : UserRole.CLIENT;
     }
 
     // Valida la solicitud de reenvio del enlace de validacion.

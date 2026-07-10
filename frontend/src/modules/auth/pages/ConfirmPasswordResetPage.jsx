@@ -41,6 +41,11 @@ export function ConfirmPasswordResetPage() {
       return;
     }
 
+    if (!isStrongPassword(formData.password)) {
+      setErrorMessage('La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -92,4 +97,11 @@ export function ConfirmPasswordResetPage() {
       </form>
     </AuthShell>
   );
+}
+
+function isStrongPassword(password) {
+  return password.trim().length >= 8
+    && /[A-Z]/.test(password)
+    && /[a-z]/.test(password)
+    && /\d/.test(password);
 }

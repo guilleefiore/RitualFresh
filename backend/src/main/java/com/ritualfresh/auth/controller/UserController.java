@@ -26,6 +26,7 @@ import com.ritualfresh.shared.security.SessionCookieUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -45,6 +46,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+
+    @Value("${ritualfresh.session.cookie-secure:false}")
+    private boolean sessionCookieSecure;
+
+    @Value("${ritualfresh.session.cookie-same-site:Lax}")
+    private String sessionCookieSameSite;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -88,7 +95,11 @@ public class UserController {
                 request.password()));
         response.addHeader(
                 HttpHeaders.SET_COOKIE,
-                SessionCookieUtils.buildSessionCookieHeader(result.sessionToken(), result.sessionExpiresAt()));
+                SessionCookieUtils.buildSessionCookieHeader(
+                        result.sessionToken(),
+                        result.sessionExpiresAt(),
+                        sessionCookieSecure,
+                        sessionCookieSameSite));
 
         return new LoginApiResponse(
                 "Login de sesion exitoso.",
@@ -133,7 +144,9 @@ public class UserController {
     // Cerrar sesión: invalidar sesión y expirar cookie
     public MessageApiResponse closeSession(Authentication authentication, HttpServletResponse response) {
         userService.closeSession(extractSessionToken(authentication));
-        response.addHeader(HttpHeaders.SET_COOKIE, SessionCookieUtils.buildExpiredSessionCookieHeader());
+        response.addHeader(HttpHeaders.SET_COOKIE, SessionCookieUtils.buildExpiredSessionCookieHeader(
+                sessionCookieSecure,
+                sessionCookieSameSite));
 
         return new MessageApiResponse("Session cerrada correctamente.");
     }
@@ -142,7 +155,9 @@ public class UserController {
     // Eliminar propia cuenta (borrado lógico) y cerrar sesión
     public MessageApiResponse deleteMyAccount(Authentication authentication, HttpServletResponse response) {
         userService.deleteAuthenticatedAccount(extractSessionToken(authentication));
-        response.addHeader(HttpHeaders.SET_COOKIE, SessionCookieUtils.buildExpiredSessionCookieHeader());
+        response.addHeader(HttpHeaders.SET_COOKIE, SessionCookieUtils.buildExpiredSessionCookieHeader(
+                sessionCookieSecure,
+                sessionCookieSameSite));
 
         return new MessageApiResponse("Cuenta eliminada correctamente.");
     }

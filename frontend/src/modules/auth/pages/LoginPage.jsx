@@ -22,7 +22,6 @@ export function LoginPage() {
     email: '',
     password: '',
   });
-  const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,16 +123,6 @@ export function LoginPage() {
         ) : null}
 
         <div className="auth-form__options">
-          <label className="checkbox">
-            <input
-              name="rememberMe"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />
-            <span>Recordarme</span>
-          </label>
-
           <Link className="auth-form__forgot" to="/password-reset">
             ¿Olvidaste tu contraseña?
           </Link>

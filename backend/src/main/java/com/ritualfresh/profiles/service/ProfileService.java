@@ -28,6 +28,8 @@ public class ProfileService {
     private static final Pattern STREET_PATTERN = Pattern.compile("^[\\p{L}0-9 .'-]{2,120}$");
     private static final Pattern STREET_NUMBER_PATTERN = Pattern.compile("^[0-9]{1,6}[A-Za-z]?$");
     private static final Pattern POSTAL_CODE_PATTERN = Pattern.compile("^[A-Za-z0-9\\s-]{3,12}$");
+    private static final Pattern AVAILABILITY_PATTERN = Pattern.compile("^.+ de ([01]\\d|2[0-3]):[0-5]\\d a ([01]\\d|2[0-3]):[0-5]\\d$");
+    private static final int MIN_WORKER_DESCRIPTION_LENGTH = 30;
 
     private final UserService userService;
     private final ClientProfileRepository clientProfileRepository;
@@ -48,7 +50,7 @@ public class ProfileService {
 
         ClientProfile profile = new ClientProfile(
                 user,
-                normalizeOptional(request.photoUrl()),
+                validatePhotoUrl(request.photoUrl()),
                 validatePhoneNumber(request.contactPhone()),
                 validateStreetName(request.streetName()),
                 validateStreetNumber(request.streetNumber()),
@@ -77,12 +79,12 @@ public class ProfileService {
 
         WorkerProfile profile = new WorkerProfile(
                 user,
-                normalizeOptional(request.photoUrl()),
-                validateText(request.description(), "descripcion del trabajador"),
+                validatePhotoUrl(request.photoUrl()),
+                validateWorkerDescription(request.description()),
                 validateYearsOfExperience(request.yearsOfExperience()),
                 validateText(request.offeredServices(), "servicios ofrecidos"),
                 validateText(request.workArea(), "zona de trabajo"),
-                validateText(request.availability(), "disponibilidad"),
+                validateAvailability(request.availability()),
                 validateHourlyRate(request.hourlyRate()));
 
         return UserProfileResult.from(workerProfileRepository.save(profile));
@@ -94,11 +96,19 @@ public class ProfileService {
     public UserProfileResult getMyProfile() {
         User user = userService.getAuthenticatedUser();
 
-        return clientProfileRepository.findByUserId(user.getId())
-                .map(UserProfileResult::from)
-                .or(() -> workerProfileRepository.findByUserId(user.getId())
-                        .map(UserProfileResult::from))
-                .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil creado."));
+        if (user.getRole() == UserRole.CLIENT) {
+            return clientProfileRepository.findByUserId(user.getId())
+                    .map(UserProfileResult::from)
+                    .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil de cliente."));
+        }
+
+        if (user.getRole() == UserRole.WORKER) {
+            return workerProfileRepository.findByUserId(user.getId())
+                    .map(UserProfileResult::from)
+                    .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil de trabajador."));
+        }
+
+        throw new BusinessRuleException("El rol del usuario no posee perfil asociado.");
     }
 
     // Actualiza los datos del perfil de cliente del usuario autenticado.
@@ -119,7 +129,7 @@ public class ProfileService {
         ClientProfile profile = clientProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil de cliente."));
         profile.edit(
-                normalizeOptional(request.photoUrl()),
+                validatePhotoUrl(request.photoUrl()),
                 validatePhoneNumber(request.contactPhone()),
                 validateStreetName(request.streetName()),
                 validateStreetNumber(request.streetNumber()),
@@ -151,12 +161,12 @@ public class ProfileService {
         WorkerProfile profile = workerProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil de trabajador."));
         profile.edit(
-                normalizeOptional(request.photoUrl()),
-                validateText(request.description(), "descripcion del trabajador"),
+                validatePhotoUrl(request.photoUrl()),
+                validateWorkerDescription(request.description()),
                 validateYearsOfExperience(request.yearsOfExperience()),
                 validateText(request.offeredServices(), "servicios ofrecidos"),
                 validateText(request.workArea(), "zona de trabajo"),
-                validateText(request.availability(), "disponibilidad"),
+                validateAvailability(request.availability()),
                 validateHourlyRate(request.hourlyRate()));
 
         return UserProfileResult.from(workerProfileRepository.save(profile));
@@ -257,6 +267,28 @@ public class ProfileService {
         }
 
         return value.trim();
+    }
+
+    private String validatePhotoUrl(String photoUrl) {
+        return validateText(photoUrl, "foto de perfil");
+    }
+
+    private String validateWorkerDescription(String description) {
+        String value = validateText(description, "descripcion del trabajador");
+        if (value.length() < MIN_WORKER_DESCRIPTION_LENGTH) {
+            throw new BusinessRuleException("La descripcion del trabajador debe tener al menos 30 caracteres.");
+        }
+
+        return value;
+    }
+
+    private String validateAvailability(String availability) {
+        String value = validateText(availability, "disponibilidad");
+        if (!AVAILABILITY_PATTERN.matcher(value).matches()) {
+            throw new BusinessRuleException("La disponibilidad debe indicar dias y horario en formato HH:mm.");
+        }
+
+        return value;
     }
 
     private String normalizeOptional(String value) {

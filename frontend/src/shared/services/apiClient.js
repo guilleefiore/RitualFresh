@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 let unauthorizedHandler = null;
 
@@ -9,12 +9,15 @@ export function setApiUnauthorizedHandler(handler) {
 export async function apiRequest(path, options = {}) {
   const { body, headers, skipUnauthorizedHandler = false, ...restOptions } = options;
   const requestHeaders = new Headers(headers || {});
+  const method = (restOptions.method || 'GET').toUpperCase();
 
   if (body !== undefined && !requestHeaders.has('Content-Type')) {
     requestHeaders.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  setCsrfHeaderIfAvailable(requestHeaders, method);
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: 'include',
     headers: requestHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -28,14 +31,45 @@ export async function apiRequest(path, options = {}) {
     error.status = response.status;
     error.payload = responseData;
 
-    if (response.status === 401 && unauthorizedHandler && !skipUnauthorizedHandler) {
-      unauthorizedHandler(error);
-    }
+    handleUnauthorizedError(error, skipUnauthorizedHandler);
 
     throw error;
   }
 
   return responseData;
+}
+
+export function getAssetUrl(path) {
+  if (!path || path.startsWith('http')) {
+    return path;
+  }
+
+  return `${API_BASE_URL}${path}`;
+}
+
+export function setCsrfHeaderIfAvailable(headers, method = 'GET') {
+  if (['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method.toUpperCase()) || headers.has('X-XSRF-TOKEN')) {
+    return;
+  }
+
+  const token = getCookieValue('XSRF-TOKEN');
+  if (token) {
+    headers.set('X-XSRF-TOKEN', token);
+  }
+}
+
+export function handleUnauthorizedError(error, skipUnauthorizedHandler = false) {
+  if (error?.status === 401 && unauthorizedHandler && !skipUnauthorizedHandler) {
+    unauthorizedHandler(error);
+  }
+}
+
+function getCookieValue(name) {
+  return document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`))
+    ?.slice(name.length + 1) || '';
 }
 
 async function parseResponseBody(response) {
