@@ -21,12 +21,18 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private static final Logger log = LoggerFactory.getLogger(GoogleOAuth2SuccessHandler.class);
     private final UserService userService;
     private final String frontendBaseUrl;
+    private final boolean sessionCookieSecure;
+    private final String sessionCookieSameSite;
 
     public GoogleOAuth2SuccessHandler(
             UserService userService,
-            @Value("${ritualfresh.auth.oauth2-frontend-base-url:http://localhost:5173}") String frontendBaseUrl) {
+            @Value("${ritualfresh.auth.oauth2-frontend-base-url:http://localhost:5173}") String frontendBaseUrl,
+            @Value("${ritualfresh.session.cookie-secure:false}") boolean sessionCookieSecure,
+            @Value("${ritualfresh.session.cookie-same-site:Lax}") String sessionCookieSameSite) {
         this.userService = userService;
         this.frontendBaseUrl = frontendBaseUrl;
+        this.sessionCookieSecure = sessionCookieSecure;
+        this.sessionCookieSameSite = sessionCookieSameSite;
     }
 
     @Override
@@ -40,7 +46,11 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
             response.addHeader(
                     "Set-Cookie",
-                    SessionCookieUtils.buildSessionCookieHeader(result.sessionToken(), result.sessionExpiresAt()));
+                    SessionCookieUtils.buildSessionCookieHeader(
+                            result.sessionToken(),
+                            result.sessionExpiresAt(),
+                            sessionCookieSecure,
+                            sessionCookieSameSite));
             String target = result.isNewUser()
                     ? trimTrailingSlash(frontendBaseUrl) + "/choose-role"
                     : redirectTargetFor(result.user().getRole().name());

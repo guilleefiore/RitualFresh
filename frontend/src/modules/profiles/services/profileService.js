@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/services/apiClient.js';
+import { API_BASE_URL, apiRequest, handleUnauthorizedError, setCsrfHeaderIfAvailable } from '../../../shared/services/apiClient.js';
 
 export function getMyProfile() {
   return apiRequest('/api/profiles/me');
@@ -18,21 +18,26 @@ export function updateMyProfile(role, data) {
   });
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-
 export async function uploadPhoto(file) {
   const formData = new FormData();
   formData.append('file', file);
+  const headers = new Headers();
+  setCsrfHeaderIfAvailable(headers, 'POST');
 
-  const response = await fetch(`${API_BASE}/api/upload`, {
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
     method: 'POST',
     credentials: 'include',
+    headers,
     body: formData,
   });
 
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    throw new Error(data?.message || 'Error al subir la imagen.');
+    const error = new Error(data?.message || 'Error al subir la imagen.');
+    error.status = response.status;
+    error.payload = data;
+    handleUnauthorizedError(error);
+    throw error;
   }
 
   return response.json();

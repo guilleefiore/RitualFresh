@@ -19,6 +19,8 @@ import com.ritualfresh.profiles.dto.UserProfileResult;
 import com.ritualfresh.profiles.model.ProfileType;
 import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
 import com.ritualfresh.profiles.repository.InMemoryWorkerProfileRepository;
+import com.ritualfresh.profiles.repository.ClientProfileRepository;
+import com.ritualfresh.profiles.repository.WorkerProfileRepository;
 import com.ritualfresh.profiles.service.ProfileService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
@@ -37,17 +39,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ProfileServiceTest {
     private UserService userService;
     private ProfileService profileService;
+    private ClientProfileRepository clientProfileRepository;
+    private WorkerProfileRepository workerProfileRepository;
 
     @BeforeEach
     void setUp() {
         SecurityContextHolder.clearContext();
         UserRepository userRepository = new InMemoryUserRepository();
         UserSessionRepository userSessionRepository = new InMemoryUserSessionRepository();
-        userService = new UserService(userRepository, userSessionRepository, new InMemoryAccountEmailService());
+        clientProfileRepository = new InMemoryClientProfileRepository();
+        workerProfileRepository = new InMemoryWorkerProfileRepository();
+        userService = new UserService(
+                userRepository,
+                userSessionRepository,
+                new InMemoryAccountEmailService(),
+                clientProfileRepository,
+                workerProfileRepository);
         profileService = new ProfileService(
                 userService,
-                new InMemoryClientProfileRepository(),
-                new InMemoryWorkerProfileRepository());
+                clientProfileRepository,
+                workerProfileRepository);
     }
 
     @Test
@@ -73,7 +84,7 @@ class ProfileServiceTest {
         CreateClientProfileRequest request = new CreateClientProfileRequest(
                 "Guillermina",
                 "Fiore",
-                null,
+                "/uploads/cliente.png",
                 "abc",
                 "San Martin",
                 "123",
@@ -96,7 +107,7 @@ class ProfileServiceTest {
         CreateClientProfileRequest request = new CreateClientProfileRequest(
                 "Guillermina",
                 "Fiore",
-                null,
+                "/uploads/cliente.png",
                 "2615555555",
                 "!",
                 "123",
@@ -127,7 +138,7 @@ class ProfileServiceTest {
                 4,
                 "Limpieza general, limpieza profunda, mantenimiento",
                 "Gran Mendoza",
-                "Lunes a viernes de 9 a 17",
+                "Lunes, Martes de 09:00 a 17:00",
                 new BigDecimal("4500.00")));
         UserProfileResult obtained = profileService.getMyProfile();
 
@@ -148,13 +159,13 @@ class ProfileServiceTest {
                 new CreateWorkerProfileRequest(
                         "Joaquin",
                         "Becerra",
-                        null,
+                        "/uploads/trabajador.png",
                         "2614444444",
-                        "Limpieza profunda",
+                        "Limpieza profunda con experiencia comprobable",
                         -1,
-                        "Limpieza profunda",
+                        "Limpieza profunda con experiencia comprobable",
                         "Mendoza",
-                        "Turno tarde",
+                        "Martes de 13:00 a 17:00",
                         new BigDecimal("3500.00"))));
 
         assertEquals("Los anios de experiencia no pueden ser negativos.", exception.getMessage());
@@ -169,13 +180,13 @@ class ProfileServiceTest {
                 new CreateWorkerProfileRequest(
                         "Joaquin",
                         "Becerra",
-                        null,
+                        "/uploads/trabajador.png",
                         "2614444444",
-                        "Limpieza profunda",
+                        "Limpieza profunda con experiencia comprobable",
                         2,
                         "Limpieza profunda",
                         "Mendoza",
-                        "Turno tarde",
+                        "Martes de 13:00 a 17:00",
                         BigDecimal.ZERO)));
 
         assertEquals("El precio por hora orientativo debe ser mayor a cero.", exception.getMessage());
@@ -208,6 +219,40 @@ class ProfileServiceTest {
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(validClientRequest()));
 
         assertEquals("Debe iniciar sesion para acceder a esta funcionalidad.", exception.getMessage());
+    }
+
+    @Test
+    void requiresProfilePhotoInBackend() {
+        LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
+        CreateClientProfileRequest request = new CreateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
+                null,
+                "2615555555",
+                "San Martin",
+                "123",
+                null,
+                null,
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                "Limpieza semanal");
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(request));
+
+        assertEquals("Debe completar el campo foto de perfil.", exception.getMessage());
+    }
+
+    @Test
+    void getMyProfileUsesCurrentRole() {
+        LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
+        profileService.createClientProfile(validClientRequest());
+
+        UserProfileResult result = profileService.getMyProfile();
+
+        assertEquals(ProfileType.CLIENT, result.profileType());
     }
 
     private LoginResult registerValidateAndLoginClient() {
@@ -258,13 +303,13 @@ class ProfileServiceTest {
         return new CreateWorkerProfileRequest(
                 "Joaquin",
                 "Becerra",
-                null,
+                "/uploads/trabajador.png",
                 "2614444444",
                 "Limpieza profunda y mantenimiento del hogar",
                 3,
                 "Limpieza general y profunda",
                 "Godoy Cruz y Ciudad de Mendoza",
-                "Lunes a viernes de 8 a 16",
+                "Lunes, Martes de 08:00 a 16:00",
                 new BigDecimal("4000.00"));
     }
 

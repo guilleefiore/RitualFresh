@@ -11,6 +11,7 @@ Este documento resume reglas funcionales de RitualFresh derivadas del análisis 
 - Si una cuenta eliminada vuelve mediante Google OAuth, el sistema reactiva la cuenta existente y crea una nueva sesión.
 - Una cuenta suspendida (`SUSPENDED`) no puede iniciar sesión ni volver a registrarse con el mismo correo hasta que un administrador la reactive.
 - El registro público solicita email, contraseña, confirmación y rol; DNI, teléfono, dirección y datos profesionales se completan posteriormente en el perfil correspondiente.
+- El rol del usuario queda bloqueado una vez creado su perfil para evitar perfiles incompatibles.
 - El usuario debe iniciar sesión para acceder a funcionalidades privadas.
 - La recuperación de contraseña requiere un correo registrado.
 - El sistema debe diferenciar permisos según rol.
@@ -20,6 +21,7 @@ Este documento resume reglas funcionales de RitualFresh derivadas del análisis 
 - Un trabajador debe completar su perfil profesional para ofrecer servicios de forma confiable.
 - Un cliente debe completar información personal y dirección para agilizar futuras solicitudes.
 - Los campos obligatorios deben validarse antes de guardar.
+- La foto de perfil es obligatoria y debe ser una imagen JPG, PNG o WEBP de hasta 5 MB.
 - Los datos ingresados con formato inválido deben conservarse en pantalla para permitir corrección sin pérdida de información.
 - La información del perfil debe presentarse de forma estructurada para facilitar comparación y confianza.
 

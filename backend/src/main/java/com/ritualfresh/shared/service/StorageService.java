@@ -1,5 +1,6 @@
 package com.ritualfresh.shared.service;
 
+import com.ritualfresh.shared.exception.BusinessRuleException;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,7 @@ public class StorageService {
         try {
             Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new RuntimeException("No se pudo guardar el archivo " + filename, e);
+            throw new BusinessRuleException("No se pudo guardar la imagen.");
         }
         return filename;
     }

@@ -19,6 +19,8 @@ import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.security.PasswordSecurity;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.notifications.InMemoryAccountEmailService;
+import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
+import com.ritualfresh.profiles.repository.InMemoryWorkerProfileRepository;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +46,12 @@ class AdminServiceTest {
         SecurityContextHolder.clearContext();
         userRepository = new InMemoryUserRepository();
         userSessionRepository = new InMemoryUserSessionRepository();
-        userService = new UserService(userRepository, userSessionRepository, new InMemoryAccountEmailService());
+        userService = new UserService(
+                userRepository,
+                userSessionRepository,
+                new InMemoryAccountEmailService(),
+                new InMemoryClientProfileRepository(),
+                new InMemoryWorkerProfileRepository());
         adminService = new AdminService(userService, userRepository);
     }
 

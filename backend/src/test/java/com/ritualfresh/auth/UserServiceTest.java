@@ -20,6 +20,12 @@ import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
+import com.ritualfresh.profiles.dto.CreateClientProfileRequest;
+import com.ritualfresh.profiles.repository.ClientProfileRepository;
+import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
+import com.ritualfresh.profiles.repository.InMemoryWorkerProfileRepository;
+import com.ritualfresh.profiles.repository.WorkerProfileRepository;
+import com.ritualfresh.profiles.service.ProfileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -39,14 +45,18 @@ class UserServiceTest {
     private UserService userService;
     private InMemoryAccountEmailService accountEmailService;
     private UserRepository userRepository;
+    private ClientProfileRepository clientProfileRepository;
+    private WorkerProfileRepository workerProfileRepository;
 
     @BeforeEach
     void setUp() {
         SecurityContextHolder.clearContext();
         userRepository = new InMemoryUserRepository();
         UserSessionRepository userSessionRepository = new InMemoryUserSessionRepository();
+        clientProfileRepository = new InMemoryClientProfileRepository();
+        workerProfileRepository = new InMemoryWorkerProfileRepository();
         accountEmailService = new InMemoryAccountEmailService();
-        userService = new UserService(userRepository, userSessionRepository, accountEmailService);
+        userService = new UserService(userRepository, userSessionRepository, accountEmailService, clientProfileRepository, workerProfileRepository);
     }
 
     @Test
@@ -186,6 +196,48 @@ class UserServiceTest {
     }
 
     @Test
+    void choosingCurrentRoleIsIdempotentForGoogleOnboarding() {
+        LoginResult loginResult = userService.loginWithGoogle(new OAuth2ProfileData(
+                "google.client@example.com",
+                "Guillermina",
+                "Fiore"));
+
+        LoginResult updated = userService.updateUserRole(loginResult.sessionToken(), UserRole.CLIENT);
+
+        assertEquals(UserRole.CLIENT, updated.user().getRole());
+        assertEquals(loginResult.sessionToken(), updated.sessionToken());
+    }
+
+    @Test
+    void cannotChangeRoleAfterCreatingProfile() {
+        LoginResult session = userService.loginWithGoogle(new OAuth2ProfileData(
+                "profile.client@example.com",
+                "Guillermina",
+                "Fiore"));
+        authenticate(session);
+        ProfileService profileService = new ProfileService(userService, clientProfileRepository, workerProfileRepository);
+        profileService.createClientProfile(new CreateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
+                "/uploads/client.png",
+                "2615555555",
+                "San Martin",
+                "123",
+                null,
+                null,
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                "Limpieza semanal"));
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.updateUserRole(
+                session.sessionToken(),
+                UserRole.WORKER));
+
+        assertEquals("No puede cambiar el rol porque ya posee un perfil creado.", exception.getMessage());
+    }
+
+    @Test
     void us02M01Rf02ReusesPendingAccountWhenLoggingInWithGoogle() {
         RegisterUserResult result = registerClient();
 
@@ -241,6 +293,19 @@ class UserServiceTest {
         assertNotNull(reset.resetToken());
         assertNotNull(loginResult.sessionToken());
         assertEquals(1, accountEmailService.getResetTokens().size());
+    }
+
+    @Test
+    void us03M01Rf03PreventsWeakPasswordReset() {
+        RegisterUserResult result = registerClient();
+        userService.validateAccount(result.accountValidationToken());
+        PasswordResetResult reset = userService.requestPasswordReset(
+                new PasswordResetRequest("guillermina@example.com"));
+
+        BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.confirmPasswordReset(
+                new ConfirmPasswordResetRequest(reset.resetToken(), "debil", "debil")));
+
+        assertEquals("La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero.", exception.getMessage());
     }
 
     @Test

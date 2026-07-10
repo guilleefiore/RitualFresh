@@ -24,6 +24,7 @@ import {
   FiUser,
 } from 'react-icons/fi';
 import { FormField } from '../../../shared/components/FormField.jsx';
+import { getAssetUrl } from '../../../shared/services/apiClient.js';
 
 const SPECIALTY_OPTIONS = [
   'Limpieza general',
@@ -40,6 +41,8 @@ const WEEK_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábad
 
 const DEFAULT_FROM_TIME = '09:00';
 const DEFAULT_TO_TIME = '17:00';
+const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export function ProfilesPage() {
   const { user, role, refreshSession } = useAuth();
@@ -129,7 +132,7 @@ export function ProfilesPage() {
       } catch (error) {
         if (cancelled) return;
 
-        if (error.message === 'El usuario no posee un perfil creado.') {
+        if (isMissingProfileError(error.message)) {
           setProfile(null);
           setFormData(getInitialFormData(role));
           setHasProfile(false);
@@ -165,6 +168,17 @@ export function ProfilesPage() {
     if (!file) return;
 
     setErrorMessage('');
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      setErrorMessage('Solo se permiten imágenes JPG, PNG o WEBP.');
+      return;
+    }
+
+    if (file.size > MAX_PHOTO_SIZE_BYTES) {
+      setErrorMessage('La imagen no debe superar los 5 MB.');
+      return;
+    }
+
     setUploadingPhoto(true);
     setTouched((prev) => ({ ...prev, photoUrl: true }));
 
@@ -725,7 +739,7 @@ function PhotoField({ photoUrl, uploading, onChange, error }) {
             {photoUrl ? (
               <div className="photo-dropzone__avatar-container">
                 <img
-                  src={photoUrl.startsWith('http') ? photoUrl : `http://localhost:8080${photoUrl}`}
+                  src={getAssetUrl(photoUrl)}
                   alt="Foto de perfil"
                   className="photo-dropzone__avatar"
                 />
@@ -902,6 +916,14 @@ function getFieldErrors(role, formData) {
   if (!String(formData.hiringPreferences || '').trim()) errors.hiringPreferences = 'Completá este campo.';
 
   return errors;
+}
+
+function isMissingProfileError(message) {
+  return [
+    'El usuario no posee un perfil creado.',
+    'El usuario no posee un perfil de cliente.',
+    'El usuario no posee un perfil de trabajador.',
+  ].includes(message);
 }
 
 function getProfileCompletion(role, formData) {

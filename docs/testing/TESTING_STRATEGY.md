@@ -210,9 +210,9 @@ Flujo recomendado para validar la pantalla implementada en React:
    - intentar guardar con campos obligatorios vacíos;
    - verificar que el frontend o el backend informen el error sin romper la pantalla.
 
-Observación actual conocida:
+Observación actual:
 
-- Si se refresca la página completa, el frontend todavía no rehidrata la sesión desde la cookie. En ese caso puede requerirse iniciar sesión nuevamente para continuar probando.
+- Al refrescar la página, el frontend rehidrata la sesión desde la cookie mediante `GET /api/users/me`. Si la cookie expiró o fue invalidada, redirige a login.
 
 ##### Prueba manual frontend del módulo `admin`
 

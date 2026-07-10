@@ -48,6 +48,7 @@ Cada módulo puede contener, como mínimo, `controller`, `service`, `repository`
 - La autenticación se resuelve con Spring Security.
 - El sistema no utiliza JWT ni `HttpSession`.
 - El frontend utiliza cookie `HttpOnly` y `fetch(..., { credentials: 'include' })` como mecanismo principal de sesión.
+- La cookie de sesión expone `Secure`/`SameSite` por configuración (`RITUALFRESH_SESSION_COOKIE_SECURE`, `RITUALFRESH_SESSION_COOKIE_SAME_SITE`) y CSRF puede activarse con `RITUALFRESH_CSRF_ENABLED`.
 - El backend mantiene compatibilidad técnica con `Authorization: Bearer <sessionToken>` para pruebas y debugging.
 - El `sessionToken` se persiste en `user_sessions` y se valida mediante un filtro de seguridad.
 - Las respuestas `401` y `403` se devuelven en JSON consistente con el resto de la API.
@@ -56,6 +57,7 @@ Cada módulo puede contener, como mínimo, `controller`, `service`, `repository`
   - tras la autenticación externa, `GoogleOAuth2SuccessHandler` extrae el perfil (email, nombre, apellido),
     crea o autentica el usuario local y establece la cookie `HttpOnly` de sesión;
   - los usuarios nuevos (nunca antes vistos) son redirigidos a `/choose-role` para seleccionar CLIENT o WORKER;
+  - la selección de rol se bloquea cuando ya existe un perfil asociado;
   - los usuarios existentes son redirigidos al home según su rol (`/client/home`, `/worker/home`, `/admin/home`);
   - los endpoints `/oauth2/**` y `/login/oauth2/**` son públicos (permitAll);
   - las credenciales se configuran mediante `RITUALFRESH_GOOGLE_CLIENT_ID` y `RITUALFRESH_GOOGLE_CLIENT_SECRET`.
@@ -188,6 +190,7 @@ frontend/src/
 - No duplicar lógica de filtros o formateo.
 - Mantener nombres de rutas y componentes consistentes con módulos.
 - Si un módulo depende del rol autenticado, resolver la variante visual dentro de la misma pantalla sólo cuando comparta el mismo caso de uso, como ocurre actualmente con `/profiles`.
+- No permitir cambios de rol una vez creado el perfil; mantener `getMyProfile` alineado con el rol autenticado.
 
 ## Convenciones de nombres
 

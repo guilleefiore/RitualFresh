@@ -23,6 +23,9 @@ import com.ritualfresh.shared.config.SecurityConfig;
 import com.ritualfresh.shared.security.RestAccessDeniedHandler;
 import com.ritualfresh.shared.security.RestAuthenticationEntryPoint;
 import com.ritualfresh.shared.security.SessionAuthenticationFilter;
+import com.ritualfresh.shared.controller.FileUploadController;
+import com.ritualfresh.shared.service.StorageService;
+import org.springframework.mock.web.MockMultipartFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,7 @@ import java.time.LocalDateTime;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,7 +50,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {
         UserController.class,
         ProfileController.class,
-        AdminController.class
+        AdminController.class,
+        FileUploadController.class
 })
 @Import({
         SecurityConfig.class,
@@ -202,7 +207,7 @@ class SecurityIntegrationTest {
         mockMvc.perform(get("/api/profiles/me")
                         .cookie(new jakarta.servlet.http.Cookie("RITUALFRESH_SESSION", sessionCookieValue)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("El usuario no posee un perfil creado."));
+                .andExpect(jsonPath("$.message").value("El usuario no posee un perfil de cliente."));
     }
 
     @Test
@@ -312,6 +317,50 @@ class SecurityIntegrationTest {
         org.junit.jupiter.api.Assertions.assertEquals(1, accountEmailService.getValidationTokens().size());
     }
 
+    @Test
+    void uploadRequiresAuthentication() throws Exception {
+        MockMultipartFile image = new MockMultipartFile(
+                "file",
+                "photo.png",
+                "image/png",
+                "image".getBytes());
+
+        mockMvc.perform(multipart("/api/upload").file(image))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void uploadRejectsNonImageFile() throws Exception {
+        persistSession("token-upload-client", UserRole.CLIENT, LocalDateTime.now().plusHours(1), null);
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "document.pdf",
+                "application/pdf",
+                "pdf".getBytes());
+
+        mockMvc.perform(multipart("/api/upload")
+                        .file(file)
+                        .cookie(new jakarta.servlet.http.Cookie("RITUALFRESH_SESSION", "token-upload-client")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Solo se permiten imagenes JPG, PNG o WEBP."));
+    }
+
+    @Test
+    void uploadAcceptsValidImage() throws Exception {
+        persistSession("token-upload-image", UserRole.CLIENT, LocalDateTime.now().plusHours(1), null);
+        MockMultipartFile image = new MockMultipartFile(
+                "file",
+                "photo.webp",
+                "image/webp",
+                "image".getBytes());
+
+        mockMvc.perform(multipart("/api/upload")
+                        .file(image)
+                        .cookie(new jakarta.servlet.http.Cookie("RITUALFRESH_SESSION", "token-upload-image")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").value("/uploads/test-image.webp"));
+    }
+
     private void persistSession(String token, UserRole role, LocalDateTime expiresAt, LocalDateTime closedAt) {
         User user = User.register(new User.RegistrationData(
                 "Test",
@@ -372,8 +421,10 @@ class SecurityIntegrationTest {
         UserService userService(
                 UserRepository userRepository,
                 UserSessionRepository userSessionRepository,
-                AccountEmailService accountEmailService) {
-            return new UserService(userRepository, userSessionRepository, accountEmailService);
+                AccountEmailService accountEmailService,
+                ClientProfileRepository clientProfileRepository,
+                WorkerProfileRepository workerProfileRepository) {
+            return new UserService(userRepository, userSessionRepository, accountEmailService, clientProfileRepository, workerProfileRepository);
         }
 
         @Bean
@@ -387,6 +438,21 @@ class SecurityIntegrationTest {
         @Bean
         AdminService adminService(UserService userService, UserRepository userRepository) {
             return new AdminService(userService, userRepository);
+        }
+
+        @Bean
+        StorageService storageService() {
+            return new StorageService() {
+                @Override
+                public void init() {
+                    // Test storage is in-memory; no filesystem setup needed.
+                }
+
+                @Override
+                public String store(org.springframework.web.multipart.MultipartFile file) {
+                    return "test-image.webp";
+                }
+            };
         }
     }
 }

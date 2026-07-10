@@ -16,6 +16,14 @@ public final class SessionCookieUtils {
     }
 
     public static String buildSessionCookieHeader(String sessionToken, LocalDateTime expiresAt) {
+        return buildSessionCookieHeader(sessionToken, expiresAt, false, "Lax");
+    }
+
+    public static String buildSessionCookieHeader(
+            String sessionToken,
+            LocalDateTime expiresAt,
+            boolean secure,
+            String sameSite) {
         Duration maxAge = Duration.between(LocalDateTime.now(), expiresAt);
         if (maxAge.isNegative()) {
             maxAge = Duration.ZERO;
@@ -23,8 +31,8 @@ public final class SessionCookieUtils {
 
         return ResponseCookie.from(SESSION_COOKIE_NAME, sessionToken)
                 .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
+                .secure(secure)
+                .sameSite(normalizeSameSite(sameSite))
                 .path("/")
                 .maxAge(maxAge)
                 .build()
@@ -32,10 +40,14 @@ public final class SessionCookieUtils {
     }
 
     public static String buildExpiredSessionCookieHeader() {
+        return buildExpiredSessionCookieHeader(false, "Lax");
+    }
+
+    public static String buildExpiredSessionCookieHeader(boolean secure, String sameSite) {
         return ResponseCookie.from(SESSION_COOKIE_NAME, "")
                 .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
+                .secure(secure)
+                .sameSite(normalizeSameSite(sameSite))
                 .path("/")
                 .maxAge(Duration.ZERO)
                 .build()
@@ -56,5 +68,9 @@ public final class SessionCookieUtils {
         }
 
         return null;
+    }
+
+    private static String normalizeSameSite(String sameSite) {
+        return sameSite == null || sameSite.isBlank() ? "Lax" : sameSite.trim();
     }
 }
