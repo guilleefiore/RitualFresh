@@ -169,6 +169,28 @@ M06 no ofrece escritura pública. Para probar datos no vacíos se deben utilizar
 9. Confirmar respuestas `403` al intercambiar los endpoints de cliente y trabajador y al intentar acceder como `ADMIN`.
 10. Validar el estado vacío con una cuenta sin registros asociados.
 
+##### Flujo manual para `M08`
+
+M08 no ofrece escritura pública. Para validar estados con datos se deben usar fixtures de prueba o eventos publicados por integración interna; no se deben agregar endpoints temporales ni seeds de producción.
+
+1. Iniciar sesión como `CLIENT`, `WORKER` y `ADMIN` en sesiones separadas.
+2. `GET /api/notifications/recent`
+   - verificar `items` con un máximo de 20 elementos;
+   - verificar orden descendente;
+   - verificar que `unreadCount` incluya todos los pendientes, aunque existan más de 20.
+3. `PATCH /api/notifications/{notificationId}/read`
+   - verificar marcado idempotente;
+   - verificar nuevo contador;
+   - repetir con un aviso ajeno y esperar `404`.
+4. `PATCH /api/notifications/read-all`
+   - verificar que sólo cambien las notificaciones del usuario autenticado.
+5. Abrir `/ws/notifications` desde el frontend autenticado.
+   - verificar eventos `notification.created`, `notification.read` y `notifications.read-all`;
+   - confirmar aislamiento entre usuarios y sincronización entre dos pestañas.
+6. Seleccionar un aviso cuyo recurso no tenga resolver o ya no sea accesible.
+   - verificar que quede leído;
+   - verificar el mensaje `El contenido ya no se encuentra disponible.`.
+
 ##### Flujo manual para login con Google (OAuth 2.0)
 
 1. Asegurarse de que el archivo `.env` tenga configuradas las credenciales
@@ -260,7 +282,7 @@ Configuración mínima sugerida:
 - Para frontend o pruebas cercanas al comportamiento final, reutilizar la cookie de sesión devuelta por login.
 - Para debugging manual o tests técnicos, el backend aún acepta `Authorization: Bearer <sessionToken>` como compatibilidad.
 
-La confirmación de persistencia se completa revisando las tablas creadas por Hibernate en PostgreSQL: `users`, `user_sessions`, `client_profiles`, `worker_profiles`, `admin_user_status_changes`, `chat_conversations`, `chat_messages`, `chat_presence` y `service_history_records`.
+La confirmación de persistencia se completa revisando las tablas creadas por Hibernate en PostgreSQL: `users`, `user_sessions`, `client_profiles`, `worker_profiles`, `admin_user_status_changes`, `chat_conversations`, `chat_messages`, `chat_presence`, `service_history_records` e `in_app_notifications`.
 
 Si se documenta evidencia manual, conviene registrar:
 
@@ -312,10 +334,20 @@ Cobertura actual implementada en backend:
   - ventanas móviles y agrupación diaria, semanal y mensual
   - promedio sobre registros calificados, importes nulos y exclusión de cancelados
   - actividad efectiva del cliente, categorías completadas y orden/límite de trabajadores frecuentes
+- `NotificationServiceTest`
+  - límite visible de 20 y contador total de pendientes
+  - ownership, lectura idempotente y marcado masivo aislado
+  - destino disponible o inaccesible, deduplicación y publicación en tiempo real
+- `NotificationHandshakeInterceptorTest`
+  - aceptación con cookie de sesión vigente y rechazo sin cookie o con sesión inválida
+- `NotificationWebSocketHubTest`
+  - entrega de eventos únicamente a las conexiones del destinatario
 - `SecurityIntegrationTest`
   - acceso de `CLIENT` y `WORKER` al historial propio
   - separación por rol de `/api/statistics/clients/me` y `/api/statistics/workers/me`
   - rechazo de `ADMIN` en el historial funcional
+  - acceso de `CLIENT`, `WORKER` y `ADMIN` al panel de notificaciones propio
+  - ocultamiento de notificaciones ajenas al marcar lectura
 
 ### Pruebas frontend
 
@@ -341,6 +373,17 @@ Validación manual de M06:
 4. Abrir `/statistics` y alternar 7, 30 y 365 días; verificar métricas, gráficos, categorías y trabajadores frecuentes según el rol.
 5. Verificar los vacíos sin datos y el mensaje específico cuando los filtros no producen coincidencias.
 6. Confirmar que los importes utilizan formato ARS y que un importe nulo se presenta como `Importe no disponible`.
+
+Validación manual de M08:
+
+1. Abrir la campana como cliente, trabajador y administrador; verificar carga inferior a un segundo y estado vacío real cuando corresponda.
+2. Con fixtures controlados, verificar badge exacto, orden, línea temporal y diferenciación de no leídas.
+3. Marcar una notificación y luego todas; comprobar actualización inmediata sin recargar.
+4. Abrir dos pestañas de la misma cuenta y confirmar sincronización por WebSocket.
+5. Interrumpir y restaurar el backend; confirmar reconexión y resincronización por REST.
+6. Seleccionar contenido inaccesible y verificar mensaje informativo sin recuperar el estado no leído.
+7. Probar `Escape`, clic exterior, cierre visible, tabulación, foco y `prefers-reduced-motion`.
+8. Repetir en desktop y viewport móvil para verificar panel flotante y sheet inferior.
 
 ## Evidencia de pruebas
 

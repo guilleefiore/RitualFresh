@@ -139,6 +139,34 @@
   min-width: 0;
 }
 
+.admin-utility-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 4.25rem;
+  padding: 0.65rem clamp(1.25rem, 4vw, 3.5rem);
+  border-bottom: 1px solid rgba(214, 221, 232, 0.9);
+  background: rgba(255, 255, 255, 0.93);
+  backdrop-filter: blur(16px);
+}
+
+.admin-utility-bar > div:first-child {
+  display: grid;
+  gap: 0.05rem;
+}
+
+.admin-utility-bar span {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+}
+
+.admin-utility-bar strong {
+  font-size: 0.86rem;
+}
+
 .admin-page {
   width: min(100%, 1280px);
   margin: 0 auto;

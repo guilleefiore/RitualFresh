@@ -1,5 +1,7 @@
 # Módulos funcionales
 
+La cobertura de clases implementadas y propuestas para todos los módulos se encuentra en la sección de diagramas del [README](../../README.md). Los diagramas marcados como diseño propuesto sirven como base de discusión y no representan código ya disponible.
+
 ## M01 - Gestión de Usuarios y Autenticación
 
 Gestiona registro, validación de cuenta, inicio de sesión (incluyendo login social con Google), recuperación de contraseña, roles y acceso al sistema.
@@ -117,6 +119,15 @@ Historia principal:
 ## M08 - Notificaciones
 
 Gestiona notificaciones in-app, badge de no leídas, panel desplegable, marcado de lectura y generación automática por eventos relevantes.
+
+Estado actual de implementación:
+
+- read model persistente `InAppNotification` con deduplicación por destinatario y evento
+- últimas 20 notificaciones y contador exacto en `GET /api/notifications/recent`
+- lectura individual y masiva mediante endpoints autenticados
+- canal dedicado `/ws/notifications` con autenticación por cookie y aislamiento por usuario
+- panel responsive disponible para `CLIENT`, `WORKER` y `ADMIN`
+- puerto interno `NotificationPublisher` preparado para M04, M09 y M11, sin endpoint público de escritura ni datos simulados
 
 Historias principales:
 

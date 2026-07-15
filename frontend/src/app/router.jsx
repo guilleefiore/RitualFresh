@@ -17,6 +17,7 @@ import { ProfilesPage } from '../modules/profiles/pages/ProfilesPage.jsx';
 import { HistoryPage } from '../modules/history/pages/HistoryPage.jsx';
 import { StatisticsPage } from '../modules/history/pages/StatisticsPage.jsx';
 import { ProtectedRoute } from '../shared/guards/ProtectedRoute.jsx';
+import { UserLayout } from '../shared/layouts/UserLayout.jsx';
 import { useLocation } from 'react-router-dom';
 
 function LegacyResetPasswordRedirect() {
@@ -37,23 +38,20 @@ export function AppRouter() {
       <Route path="/validation" element={<AccountValidationPage />} />
       <Route path="/validation/resend" element={<ResendValidationPage />} />
 
-      <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
-        <Route path="/client/home" element={<ClientHomePage />} />
-      </Route>
-
-      <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
-        <Route path="/worker/home" element={<WorkerHomePage />} />
-      </Route>
-
-      <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
-        <Route path="/choose-role" element={<ChooseRolePage />} />
-      </Route>
-
       <Route element={<ProtectedRoute allowedRoles={['CLIENT', 'WORKER']} />}>
-        <Route path="/profiles" element={<ProfilesPage />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/statistics" element={<StatisticsPage />} />
+        <Route element={<UserLayout />}>
+          <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
+            <Route path="/client/home" element={<ClientHomePage />} />
+            <Route path="/choose-role" element={<ChooseRolePage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
+            <Route path="/worker/home" element={<WorkerHomePage />} />
+          </Route>
+          <Route path="/profiles" element={<ProfilesPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/statistics" element={<StatisticsPage />} />
+        </Route>
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>

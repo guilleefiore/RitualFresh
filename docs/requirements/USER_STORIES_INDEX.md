@@ -52,3 +52,4 @@ Este índice resume las historias de usuario definidas en el diseño del sistema
 
 - [M01 - Gestión de Usuarios y Autenticación](M01_USUARIOS_AUTENTICACION.md)
 - [M06 - Historial y Estadísticas](M06_HISTORIAL_ESTADISTICAS.md)
+- [M08 - Notificaciones](M08_NOTIFICACIONES.md)
