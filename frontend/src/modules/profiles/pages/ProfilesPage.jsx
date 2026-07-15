@@ -39,6 +39,31 @@ const SPECIALTY_OPTIONS = [
 
 const WEEK_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
+const SERVICE_FREQUENCY_OPTIONS = [
+  { value: 'ONE_TIME', label: 'Una vez' },
+  { value: 'WEEKLY', label: 'Semanal' },
+  { value: 'BIWEEKLY', label: 'Quincenal' },
+  { value: 'MONTHLY', label: 'Mensual' },
+  { value: 'AS_NEEDED', label: 'Según necesidad' },
+];
+
+const PREFERRED_TIME_OPTIONS = [
+  { value: 'MORNING', label: 'Mañana' },
+  { value: 'AFTERNOON', label: 'Tarde' },
+  { value: 'FLEXIBLE', label: 'Indistinto' },
+];
+
+const CLIENT_SERVICE_OPTIONS = [
+  { value: 'GENERAL_CLEANING', label: 'Limpieza general' },
+  { value: 'DEEP_CLEANING', label: 'Limpieza profunda' },
+  { value: 'HOME_MAINTENANCE', label: 'Mantenimiento del hogar' },
+  { value: 'ORGANIZATION', label: 'Organización y orden' },
+  { value: 'LAUNDRY_AND_IRONING', label: 'Lavado y planchado' },
+  { value: 'PLANT_CARE', label: 'Cuidado de plantas' },
+  { value: 'SMALL_REPAIRS', label: 'Pequeñas reparaciones' },
+  { value: 'OTHER', label: 'Otro' },
+];
+
 const DEFAULT_FROM_TIME = '09:00';
 const DEFAULT_TO_TIME = '17:00';
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
@@ -72,7 +97,7 @@ export function ProfilesPage() {
   };
 
   const scrollToFirstError = () => {
-    const firstErrorField = document.querySelector('.form-field__error');
+    const firstErrorField = document.querySelector('.form-field__error, .profile-field-error');
     if (firstErrorField) {
       firstErrorField.closest('.profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -85,6 +110,8 @@ export function ProfilesPage() {
 
   useEffect(() => {
     if (isLoading) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     const ctx = gsap.context(() => {
       gsap.from(cardRef.current, { y: 24, opacity: 0, duration: 0.5, ease: 'power2.out' });
       gsap.from(sectionsRef.current.filter(Boolean), {
@@ -161,6 +188,14 @@ export function ProfilesPage() {
 
   function updateWorkerAvailability(nextAvailability) {
     setFormData((current) => ({ ...current, availability: serializeAvailability(nextAvailability) }));
+  }
+
+  function updateClientPreference(name, value) {
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'serviceInterests' && !value.includes('OTHER') ? { otherServiceInterest: '' } : {}),
+    }));
   }
 
   async function handleFileChange(event) {
@@ -267,44 +302,16 @@ export function ProfilesPage() {
               />
             </section>
 
-            <section className="profile-section" ref={(el) => (sectionsRef.current[1] = el)}>
-              <div className="profile-section__header">
-                <h3>Datos personales</h3>
-              </div>
-
-              <div className="profile-account-grid">
-                <div className="profile-account-chip">
-                  <FiUser />
-                  <div>
-                    <span>Nombre completo</span>
-                    <strong>{formData.firstName} {formData.lastName}</strong>
-                  </div>
-                </div>
-                <div className="profile-account-chip">
-                  <FiMail />
-                  <div>
-                    <span>Correo electrónico</span>
-                    <strong>{user?.email}</strong>
-                  </div>
-                </div>
-                <div className="profile-account-chip">
-                  <FiBriefcase />
-                  <div>
-                    <span>Rol</span>
-                    <strong>{formatRole(role)}</strong>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <div ref={(el) => (sectionsRef.current[2] = el)}>
+            <div className="profile-sections" ref={(el) => (sectionsRef.current[1] = el)}>
               {renderFields(
                 role,
+                user,
                 formData,
                 handleChange,
                 fieldErrors,
                 updateWorkerSpecialties,
                 updateWorkerAvailability,
+                updateClientPreference,
                 handleBlur,
                 shouldShowError
               )}
@@ -332,11 +339,13 @@ export function ProfilesPage() {
 
 function renderFields(
   role,
+  user,
   formData,
   handleChange,
   fieldErrors,
   updateWorkerSpecialties,
   updateWorkerAvailability,
+  updateClientPreference,
   handleBlur,
   shouldShowError
 ) {
@@ -346,14 +355,170 @@ function renderFields(
 
     return (
       <>
-      <section className="profile-section">
-        <div className="profile-section__header">
-          <h3>Datos personales y profesionales *</h3>
-        </div>
+        <section className="profile-section profile-section--panel">
+          <ProfileSectionHeader
+            icon={<FiUser />}
+            title="Información personal"
+            description="Tus datos básicos y la información de contacto para comunicarte con clientes."
+          />
+          <AccountSummary email={user?.email} role={role} />
+          <div className="profile-grid profile-grid--twelve">
+            <ProfileField
+              required
+              className="profile-field--span-4"
+              label="Nombre"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="Ana"
+              error={shouldShowError('firstName') ? fieldErrors.firstName : null}
+            />
+            <ProfileField
+              required
+              className="profile-field--span-4"
+              label="Apellido"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="Pérez"
+              error={shouldShowError('lastName') ? fieldErrors.lastName : null}
+            />
+            <ProfileField
+              required
+              className="profile-field--span-4"
+              label="Teléfono"
+              name="contactPhone"
+              value={formData.contactPhone}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="+54 261 555 1234"
+              error={shouldShowError('contactPhone') ? fieldErrors.contactPhone : null}
+            />
+          </div>
+        </section>
 
-        <div className="profile-grid profile-grid--two">
+        <section className="profile-section profile-section--panel">
+          <ProfileSectionHeader
+            icon={<FiFileText />}
+            title="Presentación profesional"
+            description="Contá dónde trabajás y qué experiencia podés aportar."
+          />
+          <div className="profile-grid profile-grid--twelve">
+            <ProfileField
+              required
+              className="profile-field--span-8"
+              label="Ciudad o zona de trabajo"
+              name="workArea"
+              value={formData.workArea}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="Mendoza, Mendoza"
+              error={shouldShowError('workArea') ? fieldErrors.workArea : null}
+            />
+            <ProfileField
+              required
+              className="profile-field--span-4"
+              label="Años de experiencia"
+              name="yearsOfExperience"
+              type="number"
+              min="0"
+              value={formData.yearsOfExperience}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="3"
+              error={shouldShowError('yearsOfExperience') ? fieldErrors.yearsOfExperience : null}
+            />
+            <ProfileField
+              required
+              className="profile-field--span-12"
+              label="Descripción personal"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="Contanos sobre tu experiencia, tus valores y tu forma de trabajar..."
+              multiline
+              rows={5}
+              error={shouldShowError('description') ? fieldErrors.description : null}
+            />
+          </div>
+        </section>
+
+        <section className="profile-section profile-section--panel">
+          <ProfileSectionHeader
+            icon={<FiBriefcase />}
+            title="Servicios"
+            description="Seleccioná las tareas que ofrecés para recibir propuestas relevantes."
+            required
+          />
+          <SpecialtySelector
+            selected={selectedSpecialties}
+            onChange={(nextSpecialties) => {
+              updateWorkerSpecialties(nextSpecialties);
+              handleBlur({ target: { name: 'offeredServices' } });
+            }}
+            error={shouldShowError('offeredServices') ? fieldErrors.offeredServices : null}
+          />
+        </section>
+
+        <section className="profile-section profile-section--panel">
+          <ProfileSectionHeader
+            icon={<FiCalendar />}
+            title="Disponibilidad"
+            description="Indicá los días y el rango horario en que solés estar disponible."
+            required
+          />
+          <AvailabilitySelector
+            value={availability}
+            onChange={(nextAvailability) => {
+              updateWorkerAvailability(nextAvailability);
+              handleBlur({ target: { name: 'availability' } });
+            }}
+            error={shouldShowError('availability') ? fieldErrors.availability : null}
+          />
+        </section>
+
+        <section className="profile-section profile-section--panel">
+          <ProfileSectionHeader
+            icon={<FiDollarSign />}
+            title="Tarifa"
+            description="Definí un valor orientativo para que el cliente pueda evaluar la contratación."
+          />
+          <div className="profile-rate-field">
+            <ProfileField
+              required
+              label="Precio por hora"
+              name="hourlyRate"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={formData.hourlyRate}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="6500"
+              error={shouldShowError('hourlyRate') ? fieldErrors.hourlyRate : null}
+            />
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <section className="profile-section profile-section--panel">
+        <ProfileSectionHeader
+          icon={<FiUser />}
+          title="Información personal"
+          description="Completá tus datos básicos para que el trabajador pueda comunicarse con vos."
+        />
+        <AccountSummary email={user?.email} role={role} />
+        <div className="profile-grid profile-grid--twelve">
           <ProfileField
             required
+            className="profile-field--span-4"
             label="Nombre"
             name="firstName"
             value={formData.firstName}
@@ -364,6 +529,7 @@ function renderFields(
           />
           <ProfileField
             required
+            className="profile-field--span-4"
             label="Apellido"
             name="lastName"
             value={formData.lastName}
@@ -372,11 +538,9 @@ function renderFields(
             placeholder="Pérez"
             error={shouldShowError('lastName') ? fieldErrors.lastName : null}
           />
-        </div>
-
-        <div className="profile-grid profile-grid--two">
           <ProfileField
             required
+            className="profile-field--span-4"
             label="Teléfono"
             name="contactPhone"
             value={formData.contactPhone}
@@ -385,208 +549,257 @@ function renderFields(
             placeholder="+54 261 555 1234"
             error={shouldShowError('contactPhone') ? fieldErrors.contactPhone : null}
           />
+        </div>
+      </section>
+
+      <section className="profile-section profile-section--panel">
+        <ProfileSectionHeader
+          icon={<FiMapPin />}
+          title="Domicilio"
+          description="Esta información permite coordinar servicios y encontrar trabajadores cercanos."
+        />
+        <div className="profile-grid profile-grid--twelve">
           <ProfileField
             required
-            label="Ciudad/Zona"
-            name="workArea"
-            value={formData.workArea}
+            className="profile-field--span-8"
+            label="Calle"
+            name="streetName"
+            value={formData.streetName}
             onChange={handleChange}
             onBlur={handleBlur}
-            placeholder="Mendoza, Mendoza"
-            error={shouldShowError('workArea') ? fieldErrors.workArea : null}
+            placeholder="San Martín"
+            error={shouldShowError('streetName') ? fieldErrors.streetName : null}
           />
           <ProfileField
             required
-            label="Experiencia"
-            name="yearsOfExperience"
-            type="number"
-            min="0"
-            value={formData.yearsOfExperience}
+            className="profile-field--span-4"
+            label="Número"
+            name="streetNumber"
+            value={formData.streetNumber}
             onChange={handleChange}
             onBlur={handleBlur}
-            placeholder="3"
-            error={shouldShowError('yearsOfExperience') ? fieldErrors.yearsOfExperience : null}
+            placeholder="1234"
+            error={shouldShowError('streetNumber') ? fieldErrors.streetNumber : null}
+          />
+          <ProfileField
+            className="profile-field--span-6"
+            label="Piso"
+            name="floor"
+            value={formData.floor}
+            onChange={handleChange}
+            placeholder="Opcional"
+          />
+          <ProfileField
+            className="profile-field--span-6"
+            label="Departamento"
+            name="apartment"
+            value={formData.apartment}
+            onChange={handleChange}
+            placeholder="Opcional"
+          />
+          <ProfileField
+            required
+            className="profile-field--span-4"
+            label="Ciudad"
+            name="city"
+            value={formData.city}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="Mendoza"
+            error={shouldShowError('city') ? fieldErrors.city : null}
+          />
+          <ProfileField
+            required
+            className="profile-field--span-4"
+            label="Provincia"
+            name="province"
+            value={formData.province}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="Mendoza"
+            error={shouldShowError('province') ? fieldErrors.province : null}
+          />
+          <ProfileField
+            required
+            className="profile-field--span-4"
+            label="Código postal"
+            name="postalCode"
+            value={formData.postalCode}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="5500"
+            error={shouldShowError('postalCode') ? fieldErrors.postalCode : null}
           />
         </div>
+      </section>
 
-        <ProfileField
+      <section className="profile-section profile-section--panel">
+        <ProfileSectionHeader
+          icon={<FiFileText />}
+          title="Preferencias de contratación"
+          description="Contanos qué tipo de ayuda buscás y cuándo solés necesitarla."
           required
-          className="field--full"
-          label="Descripción personal"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
+        />
+        <ClientPreferencesSelector
+          value={formData}
+          onChange={updateClientPreference}
           onBlur={handleBlur}
-          placeholder="Cuéntanos sobre tu experiencia, valores y forma de trabajar..."
-          multiline
-          rows={5}
-          error={shouldShowError('description') ? fieldErrors.description : null}
+          errors={fieldErrors}
+          showErrors={shouldShowError}
         />
       </section>
+    </>
+  );
+}
 
-      <section className="profile-section">
-        <SpecialtySelector
-          selected={selectedSpecialties}
-          onChange={(nextSpecialties) => {
-            updateWorkerSpecialties(nextSpecialties);
-            handleBlur({ target: { name: 'offeredServices' } });
-          }}
-          error={shouldShowError('offeredServices') ? fieldErrors.offeredServices : null}
-        />
-      </section>
+function ProfileSectionHeader({ icon, title, description, required = false }) {
+  return (
+    <div className="profile-section__header">
+      <span className="profile-section__marker" aria-hidden="true">{icon}</span>
+      <div className="profile-section__copy">
+        <h3>{title}{required ? <span className="required-asterisk"> *</span> : null}</h3>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
 
-      <section className="profile-section">
-        <AvailabilitySelector
-          value={availability}
-          onChange={(nextAvailability) => {
-            updateWorkerAvailability(nextAvailability);
-            handleBlur({ target: { name: 'availability' } });
-          }}
-          error={shouldShowError('availability') ? fieldErrors.availability : null}
-        />
-      </section>
-
-      <section className="profile-section">
-        <div className="profile-section__header">
-          <h3>Precio *</h3>
+function AccountSummary({ email, role }) {
+  return (
+    <div className="profile-account-summary" aria-label="Datos de la cuenta">
+      <div className="profile-account-summary__title">
+        <FiLock aria-hidden="true" />
+        <span>Datos de la cuenta</span>
+      </div>
+      <dl>
+        <div>
+          <dt>Correo</dt>
+          <dd>{email || '-'}</dd>
         </div>
-        <div className="profile-grid profile-grid--two">
-          <ProfileField
-            required
-            label="Precio por hora"
-            name="hourlyRate"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={formData.hourlyRate}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="6500"
-            error={shouldShowError('hourlyRate') ? fieldErrors.hourlyRate : null}
-          />
+        <div>
+          <dt>Rol</dt>
+          <dd>{formatRole(role)}</dd>
         </div>
-      </section>
-      </>
-    );
+      </dl>
+    </div>
+  );
+}
+
+function ClientPreferencesSelector({ value, onChange, onBlur, errors, showErrors }) {
+  function toggleArrayValue(name, option) {
+    const current = value[name];
+    const next = current.includes(option)
+      ? current.filter((item) => item !== option)
+      : [...current, option];
+    onChange(name, next);
   }
 
   return (
-    <section className="profile-section">
-      <div className="profile-section__header">
-        <h3>Datos personales y de contacto *</h3>
-      </div>
+    <div className="client-preferences">
+      <PreferenceChoiceGroup
+        title="Frecuencia"
+        hint="¿Cada cuánto solés necesitar el servicio?"
+        options={SERVICE_FREQUENCY_OPTIONS}
+        selected={value.serviceFrequency}
+        onSelect={(option) => onChange('serviceFrequency', option)}
+        error={showErrors('serviceFrequency') ? errors.serviceFrequency : null}
+      />
 
-      <div className="profile-grid profile-grid--two">
-        <ProfileField
-          required
-          label="Nombre"
-          name="firstName"
-          value={formData.firstName}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="Ana"
-          error={shouldShowError('firstName') ? fieldErrors.firstName : null}
-        />
-        <ProfileField
-          required
-          label="Apellido"
-          name="lastName"
-          value={formData.lastName}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="Pérez"
-          error={shouldShowError('lastName') ? fieldErrors.lastName : null}
-        />
-      </div>
+      <PreferenceChoiceGroup
+        title="Momento preferido"
+        hint="Podés marcar más de una opción."
+        options={PREFERRED_TIME_OPTIONS}
+        selected={value.preferredTimeSlots}
+        onSelect={(option) => toggleArrayValue('preferredTimeSlots', option)}
+        error={showErrors('preferredTimeSlots') ? errors.preferredTimeSlots : null}
+        multiple
+      />
 
-      <div className="profile-grid profile-grid--two">
-        <ProfileField
-          required
-          label="Teléfono"
-          name="contactPhone"
-          value={formData.contactPhone}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="+54 261 555 1234"
-          error={shouldShowError('contactPhone') ? fieldErrors.contactPhone : null}
-        />
-        <ProfileField
-          required
-          label="Código postal"
-          name="postalCode"
-          value={formData.postalCode}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="5500"
-          error={shouldShowError('postalCode') ? fieldErrors.postalCode : null}
-        />
-      </div>
+      <PreferenceChoiceGroup
+        title="Servicios de interés"
+        hint="Elegí los servicios que contratás con mayor frecuencia."
+        options={CLIENT_SERVICE_OPTIONS}
+        selected={value.serviceInterests}
+        onSelect={(option) => toggleArrayValue('serviceInterests', option)}
+        error={showErrors('serviceInterests') ? errors.serviceInterests : null}
+        multiple
+        otherControlsId="other-service-interest"
+      />
 
-      <div className="profile-grid profile-grid--two">
-        <ProfileField
-          required
-          label="Calle"
-          name="streetName"
-          value={formData.streetName}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="San Martín"
-          error={shouldShowError('streetName') ? fieldErrors.streetName : null}
-        />
-        <ProfileField
-          required
-          label="Número"
-          name="streetNumber"
-          value={formData.streetNumber}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="1234"
-          error={shouldShowError('streetNumber') ? fieldErrors.streetNumber : null}
-        />
-      </div>
-
-      <div className="profile-grid profile-grid--two">
-        <ProfileField label="Piso" name="floor" value={formData.floor} onChange={handleChange} placeholder="Opcional" />
-        <ProfileField label="Departamento" name="apartment" value={formData.apartment} onChange={handleChange} placeholder="Opcional" />
-      </div>
-
-      <div className="profile-grid profile-grid--two">
-        <ProfileField
-          required
-          label="Ciudad"
-          name="city"
-          value={formData.city}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="Mendoza"
-          error={shouldShowError('city') ? fieldErrors.city : null}
-        />
-        <ProfileField
-          required
-          label="Provincia"
-          name="province"
-          value={formData.province}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="Mendoza"
-          error={shouldShowError('province') ? fieldErrors.province : null}
-        />
-      </div>
+      {value.serviceInterests.includes('OTHER') ? (
+        <div id="other-service-interest" className="client-preferences__conditional">
+          <ProfileField
+            required
+            label="¿Qué otro servicio necesitás?"
+            name="otherServiceInterest"
+            value={value.otherServiceInterest}
+            onChange={(event) => onChange('otherServiceInterest', event.target.value)}
+            onBlur={onBlur}
+            placeholder="Por ejemplo, limpieza de tapizados"
+            maxLength={120}
+            error={showErrors('otherServiceInterest') ? errors.otherServiceInterest : null}
+          />
+        </div>
+      ) : null}
 
       <ProfileField
-        required
-        className="field--full"
-        label="Preferencias de contratación"
-        name="hiringPreferences"
-        value={formData.hiringPreferences}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder="Frecuencia, horarios, servicios prioritarios..."
+        label="Observaciones adicionales"
+        name="additionalNotes"
+        value={value.additionalNotes}
+        onChange={(event) => onChange('additionalNotes', event.target.value)}
+        onBlur={onBlur}
+        placeholder="Contanos cualquier detalle que pueda ayudar al trabajador (opcional)."
+        maxLength={500}
         multiline
-        rows={4}
-        error={shouldShowError('hiringPreferences') ? fieldErrors.hiringPreferences : null}
+        rows={3}
       />
-    </section>
+    </div>
+  );
+}
+
+function PreferenceChoiceGroup({
+  title,
+  hint,
+  options,
+  selected,
+  onSelect,
+  error,
+  multiple = false,
+  otherControlsId,
+}) {
+  return (
+    <fieldset className="preference-group">
+      <legend>{title}<span className="required-asterisk"> *</span></legend>
+      <p>{hint}</p>
+      <div
+        className="preference-options"
+        role={multiple ? 'group' : 'radiogroup'}
+        aria-label={title}
+      >
+        {options.map((option) => {
+          const isSelected = multiple ? selected.includes(option.value) : selected === option.value;
+          const controlsOtherField = option.value === 'OTHER' && otherControlsId;
+
+          return (
+            <button
+              key={option.value}
+              className={`preference-option${isSelected ? ' preference-option--selected' : ''}`}
+              type="button"
+              role={multiple ? undefined : 'radio'}
+              aria-checked={multiple ? undefined : isSelected}
+              aria-pressed={multiple ? isSelected : undefined}
+              aria-controls={controlsOtherField ? otherControlsId : undefined}
+              aria-expanded={controlsOtherField ? isSelected : undefined}
+              onClick={() => onSelect(option.value)}
+            >
+              <span className="preference-option__check" aria-hidden="true">{isSelected ? '✓' : ''}</span>
+              <span>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      {error ? <p className="profile-field-error">{error}</p> : null}
+    </fieldset>
   );
 }
 
@@ -600,11 +813,7 @@ function SpecialtySelector({ selected, onChange, error }) {
   }
 
   return (
-    <section className="profile-selector field--full">
-      <div className="profile-selector__header">
-        <h3>Especialidades *</h3>
-      </div>
-
+    <div className="profile-selector field--full">
       <div className="profile-chip-grid" role="group" aria-label="Especialidades">
         {SPECIALTY_OPTIONS.map((specialty) => (
           <button
@@ -627,7 +836,7 @@ function SpecialtySelector({ selected, onChange, error }) {
       ) : null}
 
       {error ? <p className="profile-field-error">{error}</p> : null}
-    </section>
+    </div>
   );
 }
 
@@ -648,11 +857,7 @@ function AvailabilitySelector({ value, onChange, error }) {
   const summary = getAvailabilitySummary(value);
 
   return (
-    <section className="profile-selector field--full">
-      <div className="profile-selector__header">
-        <h3>Disponibilidad *</h3>
-      </div>
-
+    <div className="profile-selector field--full">
       <div className="profile-day-grid" role="group" aria-label="Días disponibles">
         {WEEK_DAYS.map((day) => (
           <button
@@ -686,7 +891,7 @@ function AvailabilitySelector({ value, onChange, error }) {
       ) : null}
 
       {error ? <p className="profile-field-error">{error}</p> : null}
-    </section>
+    </div>
   );
 }
 
@@ -814,7 +1019,8 @@ function getFieldIcon(name, type) {
       return <FiMapPin />;
     case 'province':
       return <FiMap />;
-    case 'hiringPreferences':
+    case 'otherServiceInterest':
+    case 'additionalNotes':
       return <FiFileText />;
     default:
       return null;
@@ -913,7 +1119,12 @@ function getFieldErrors(role, formData) {
   if (!String(formData.postalCode || '').trim()) errors.postalCode = 'Completá este campo.';
   if (!String(formData.city || '').trim()) errors.city = 'Completá este campo.';
   if (!String(formData.province || '').trim()) errors.province = 'Completá este campo.';
-  if (!String(formData.hiringPreferences || '').trim()) errors.hiringPreferences = 'Completá este campo.';
+  if (!formData.serviceFrequency) errors.serviceFrequency = 'Seleccioná una frecuencia.';
+  if (!formData.preferredTimeSlots.length) errors.preferredTimeSlots = 'Seleccioná al menos una opción.';
+  if (!formData.serviceInterests.length) errors.serviceInterests = 'Seleccioná al menos un servicio.';
+  if (formData.serviceInterests.includes('OTHER') && !formData.otherServiceInterest.trim()) {
+    errors.otherServiceInterest = 'Indicá qué otro servicio necesitás.';
+  }
 
   return errors;
 }
@@ -929,7 +1140,21 @@ function isMissingProfileError(message) {
 function getProfileCompletion(role, formData) {
   const fields = role === 'WORKER'
     ? [formData.firstName, formData.lastName, formData.photoUrl, formData.contactPhone, formData.description, formData.yearsOfExperience, formData.offeredServices, formData.workArea, formData.availability, formData.hourlyRate]
-    : [formData.firstName, formData.lastName, formData.photoUrl, formData.contactPhone, formData.streetName, formData.streetNumber, formData.postalCode, formData.city, formData.province, formData.hiringPreferences];
+    : [
+        formData.firstName,
+        formData.lastName,
+        formData.photoUrl,
+        formData.contactPhone,
+        formData.streetName,
+        formData.streetNumber,
+        formData.postalCode,
+        formData.city,
+        formData.province,
+        formData.serviceFrequency,
+        formData.preferredTimeSlots,
+        formData.serviceInterests,
+        ...(formData.serviceInterests.includes('OTHER') ? [formData.otherServiceInterest] : []),
+      ];
 
   const filled = fields.filter((value) => String(value ?? '').trim()).length;
   return Math.round((filled / fields.length) * 100);
@@ -970,7 +1195,11 @@ function getInitialFormData(role) {
     postalCode: '',
     city: '',
     province: '',
-    hiringPreferences: '',
+    serviceFrequency: '',
+    preferredTimeSlots: [],
+    serviceInterests: [],
+    otherServiceInterest: '',
+    additionalNotes: '',
   };
 }
 
@@ -1002,7 +1231,11 @@ function mapProfileToFormData(role, profile) {
     postalCode: profile.postalCode || '',
     city: profile.city || '',
     province: profile.province || '',
-    hiringPreferences: profile.hiringPreferences || '',
+    serviceFrequency: profile.serviceFrequency || '',
+    preferredTimeSlots: profile.preferredTimeSlots || [],
+    serviceInterests: profile.serviceInterests || [],
+    otherServiceInterest: profile.otherServiceInterest || '',
+    additionalNotes: profile.additionalNotes || '',
   };
 }
 
@@ -1034,7 +1267,11 @@ function buildPayload(role, formData) {
     postalCode: formData.postalCode,
     city: formData.city,
     province: formData.province,
-    hiringPreferences: formData.hiringPreferences,
+    serviceFrequency: formData.serviceFrequency,
+    preferredTimeSlots: formData.preferredTimeSlots,
+    serviceInterests: formData.serviceInterests,
+    otherServiceInterest: formData.serviceInterests.includes('OTHER') ? formData.otherServiceInterest : null,
+    additionalNotes: formData.additionalNotes || null,
   };
 }
 

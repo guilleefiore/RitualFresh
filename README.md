@@ -11,6 +11,7 @@ Plataforma web académica para la gestión de servicios domésticos de limpieza 
 - [Guía de implementación](docs/development/IMPLEMENTATION_GUIDE.md)
 - [Estado del modelo de datos](docs/architecture/DATA_MODEL_STATUS.md)
 - [Índice de historias](docs/requirements/USER_STORIES_INDEX.md)
+- [Requisitos de M06 - Historial y Estadísticas](docs/requirements/M06_HISTORIAL_ESTADISTICAS.md)
 
 ## Stack base
 
@@ -28,18 +29,22 @@ El proyecto ya cuenta con una base backend funcional para:
 
 - `M01`: registro, validación y reenvío de validación de cuenta, login (email/contraseña y Google OAuth), logout, autoeliminación lógica de la cuenta, recuperación de contraseña y sesiones opacas persistidas.
 - `M02`: creación, consulta y actualización de perfiles de cliente y trabajador.
-- administración mínima: listado de usuarios, detalle, cambio de estado y métricas básicas.
+- `M05`: base independiente de chat entre cliente y trabajador, con conversaciones reutilizables por pareja, mensajes persistidos, historial paginado, lectura por mensaje, presencia y WebSocket. La habilitación definitiva queda desacoplada de `M04` hasta integrar su contrato.
+- `M06`: read model persistente de servicios, historial propio paginado y estadísticas móviles para clientes y trabajadores. No expone altas públicas y queda preparado para recibir eventos internos de `M04`, `M07` y `M09`.
+- administración de cuentas: métricas, directorio paginado, detalle y cambios de estado auditados.
 
 En frontend ya se encuentran implementados los flujos base para:
 
 - autenticación, validación y recuperación de contraseña;
 - dashboard mínimo por rol;
-- panel administrativo inicial en `/admin/home` con detalle por usuario en `/admin/users/:userId`;
+- panel administrativo en `/admin/home`, directorio en `/admin/users` y detalle auditado en `/admin/users/:userId`;
 - gestión de perfil propio para `CLIENT` y `WORKER` en la ruta protegida `/profiles`.
+- chat inicial para `CLIENT` y `WORKER` en la ruta protegida `/chat`.
+- historial en `/history` y estadísticas por rol en `/statistics`, ambas rutas protegidas para clientes y trabajadores.
 
 La autenticación y autorización del backend se resuelven con Spring Security, manteniendo el modelo actual de `UserSession`. Además del login por email/contraseña, el sistema integra inicio de sesión con Google mediante OAuth 2.0, que tras la autenticación externa crea o reutiliza un usuario local y establece la misma cookie `HttpOnly` de sesión. El transporte principal de sesión entre frontend y backend se realiza mediante cookie `HttpOnly`, aunque el backend todavía conserva compatibilidad técnica con `Authorization: Bearer <sessionToken>` para pruebas y debugging.
 
-El modelo de datos general sigue sujeto a revisión para módulos posteriores, pero las entidades actuales de `auth`, `profiles` y `admin` ya se encuentran implementadas y probadas.
+El modelo de datos general sigue sujeto a revisión para módulos posteriores, pero las entidades actuales de `auth`, `profiles`, `admin`, `chat` e `history` ya se encuentran implementadas y probadas.
 
 ## Diagrama de clases del módulo `auth`
 
@@ -241,6 +246,92 @@ classDiagram
     UserService ..> User : oauthAccount()
     UserController ..> UserService : updateUserRole()
 ```
+
+## Diagrama de clases del módulo `history`
+
+M06 utiliza un read model propio para habilitar consultas reales antes de que existan contratación, pagos y calificaciones completos. El módulo no expone operaciones públicas de escritura: futuros módulos alimentarán `ServiceHistoryRecord` mediante integración interna.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class ServiceHistoryRecord {
+        +Long id
+        +User client
+        +User worker
+        +String serviceName
+        +String category
+        +LocalDateTime scheduledAt
+        +ServiceHistoryStatus status
+        +BigDecimal amountArs
+        +Integer workerRating
+    }
+
+    class ServiceHistoryStatus {
+        <<enumeration>>
+        PENDING
+        COMPLETED
+        CANCELLED
+    }
+
+    class StatisticsPeriod {
+        <<enumeration>>
+        LAST_7_DAYS
+        LAST_30_DAYS
+        LAST_365_DAYS
+    }
+
+    class WorkerStatisticsResponse {
+        +long completedJobs
+        +BigDecimal averageRating
+        +List completedJobsTimeline
+    }
+
+    class ClientStatisticsResponse {
+        +long hiredServices
+        +long pendingServices
+        +long completedServices
+        +BigDecimal totalSpentArs
+        +List spendingTimeline
+        +List categories
+        +List frequentWorkers
+    }
+
+    class HistoryController {
+        +getMyServiceHistory(status, from, to, page, size) HistoryPageResponse
+    }
+
+    class StatisticsController {
+        +getMyWorkerStatistics(period) WorkerStatisticsResponse
+        +getMyClientStatistics(period) ClientStatisticsResponse
+    }
+
+    class HistoryService {
+        +getMyHistory(status, from, to, page, size) HistoryPageResponse
+    }
+
+    class StatisticsService {
+        +getMyWorkerStatistics(period) WorkerStatisticsResponse
+        +getMyClientStatistics(period) ClientStatisticsResponse
+    }
+
+    class ServiceHistoryRecordRepository {
+        <<interface>>
+        +findHistory(userId, role, status, from, to, pageable) Page
+        +findForStatistics(userId, role, from, to) List
+    }
+
+    ServiceHistoryRecord --> ServiceHistoryStatus : posee
+    ServiceHistoryRecord --> User : cliente y trabajador
+    HistoryController ..> HistoryService : delega
+    StatisticsController ..> StatisticsService : delega
+    HistoryService ..> ServiceHistoryRecordRepository : consulta
+    StatisticsService ..> ServiceHistoryRecordRepository : agrega métricas
+    StatisticsService ..> StatisticsPeriod : calcula ventana
+    StatisticsController ..> WorkerStatisticsResponse : responde
+    StatisticsController ..> ClientStatisticsResponse : responde
+```
+
 ## Diagrama de clases del módulo `profiles`
 
 Siguiendo el mismo criterio que en `auth`, en este diagrama se priorizan las clases de `model` y se agregan `controller`, `service` y `repository` para mostrar cómo se articula el módulo. Los DTOs también se omiten para conservar una vista más clara del flujo principal.
@@ -267,8 +358,12 @@ classDiagram
         +String postalCode
         +String city
         +String province
-        +String hiringPreferences
-        +edit(photoUrl, contactPhone, streetName, streetNumber, floor, apartment, postalCode, city, province, hiringPreferences)
+        +ServiceFrequency serviceFrequency
+        +Set~PreferredTimeSlot~ preferredTimeSlots
+        +Set~ServiceInterest~ serviceInterests
+        +String otherServiceInterest
+        +String additionalNotes
+        +edit(photoUrl, contactPhone, address, preferences)
     }
 
     class WorkerProfile {
@@ -288,6 +383,34 @@ classDiagram
         <<enumeration>>
         CLIENT
         WORKER
+    }
+
+    class ServiceFrequency {
+        <<enumeration>>
+        ONE_TIME
+        WEEKLY
+        BIWEEKLY
+        MONTHLY
+        AS_NEEDED
+    }
+
+    class PreferredTimeSlot {
+        <<enumeration>>
+        MORNING
+        AFTERNOON
+        FLEXIBLE
+    }
+
+    class ServiceInterest {
+        <<enumeration>>
+        GENERAL_CLEANING
+        DEEP_CLEANING
+        HOME_MAINTENANCE
+        ORGANIZATION
+        LAUNDRY_AND_IRONING
+        PLANT_CARE
+        SMALL_REPAIRS
+        OTHER
     }
 
     class ProfileController {
@@ -366,6 +489,9 @@ classDiagram
     ClientProfile --> User : pertenece a
     WorkerProfile --> User : pertenece a
     ClientProfile --> ProfileType : representa CLIENT
+    ClientProfile --> ServiceFrequency : selecciona
+    ClientProfile --> PreferredTimeSlot : prefiere
+    ClientProfile --> ServiceInterest : solicita
     WorkerProfile --> ProfileType : representa WORKER
 
     ProfileController ..> ProfileService : delega
@@ -401,7 +527,7 @@ classDiagram
 
 ## Diagrama de clases del módulo `admin`
 
-En este módulo también conviene concentrarse en las clases que sostienen el flujo principal de administración. Se muestran `controller`, `service`, el modelo reutilizado de `auth`, el repositorio compartido y el seeder de bootstrap; los DTOs se omiten para mantener el diagrama legible.
+El módulo reutiliza `User` para las cuentas y agrega una entidad de auditoría para conservar cada cambio administrativo de estado. El listado se resuelve mediante un repositorio de consulta con filtros y paginación; los DTOs se omiten para mantener el diagrama legible.
 
 ```mermaid
 classDiagram
@@ -440,17 +566,45 @@ classDiagram
     }
 
     class AdminController {
-        +listUsers(authentication) List~AdminUserResponse~
-        +getUser(authentication, id) AdminUserResponse
-        +updateUserStatus(authentication, id, request) AdminUserResponse
+        +listUsers(filters, pageable) AdminUsersPageResponse
+        +getUser(authentication, id) AdminUserDetailResponse
+        +updateUserStatus(authentication, id, request) AdminUserDetailResponse
+        +getStatusHistory(authentication, id, pageable) AdminStatusHistoryResponse
         +getMetrics(authentication) AdminMetricsResponse
     }
 
     class AdminService {
-        +listUsers() List~AdminUserResponse~
-        +getUser(userId) AdminUserResponse
-        +updateUserStatus(userId, request) AdminUserResponse
+        +listUsers(filters, pageable) AdminUsersPageResponse
+        +getUser(userId) AdminUserDetailResponse
+        +updateUserStatus(userId, status, reason) AdminUserDetailResponse
+        +getStatusHistory(userId, pageable) AdminStatusHistoryResponse
         +getMetrics() AdminMetricsResponse
+    }
+
+    class AdminUserStatusChange {
+        +Long id
+        +Long actorAdminId
+        +String actorEmail
+        +Long targetUserId
+        +String targetEmail
+        +AccountStatus previousStatus
+        +AccountStatus newStatus
+        +String reason
+        +LocalDateTime changedAt
+    }
+
+    class AdminUserQueryRepository {
+        <<interface>>
+        +search(query, role, status, pageable) Page~User~
+        +countAll() long
+        +countByRole(role) long
+        +countByStatus(status) long
+    }
+
+    class AdminStatusChangeRepository {
+        <<interface>>
+        +save(change) AdminUserStatusChange
+        +findByTargetUserId(id, pageable) Page~AdminUserStatusChange~
     }
 
     class UserService {
@@ -477,12 +631,15 @@ classDiagram
     AdminController ..> AdminService : delega
     AdminService ..> UserService : valida admin autenticado
     AdminService ..> UserRepository : consulta/persiste
+    AdminService ..> AdminUserQueryRepository : busca/pagina
+    AdminService ..> AdminStatusChangeRepository : audita cambios
     AdminService ..> User : lista/edita
     AdminService ..> UserRole : cuenta por rol
     AdminService ..> AccountStatus : valida transiciones
 
     User --> UserRole : usa
     User --> AccountStatus : usa
+    AdminUserStatusChange --> AccountStatus : registra
 
     AdminBootstrapSeeder ..> UserRepository : verifica/guarda
     AdminBootstrapSeeder ..> PasswordSecurity : cifra clave inicial

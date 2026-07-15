@@ -21,6 +21,9 @@ import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import com.ritualfresh.shared.security.AuthenticatedUserPrincipal;
 import com.ritualfresh.profiles.dto.CreateClientProfileRequest;
+import com.ritualfresh.profiles.model.PreferredTimeSlot;
+import com.ritualfresh.profiles.model.ServiceFrequency;
+import com.ritualfresh.profiles.model.ServiceInterest;
 import com.ritualfresh.profiles.repository.ClientProfileRepository;
 import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
 import com.ritualfresh.profiles.repository.InMemoryWorkerProfileRepository;
@@ -33,6 +36,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
+import java.util.Set;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -228,6 +232,10 @@ class UserServiceTest {
                 "5500",
                 "Godoy Cruz",
                 "Mendoza",
+                ServiceFrequency.WEEKLY,
+                Set.of(PreferredTimeSlot.MORNING),
+                Set.of(ServiceInterest.GENERAL_CLEANING),
+                null,
                 "Limpieza semanal"));
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> userService.updateUserRole(

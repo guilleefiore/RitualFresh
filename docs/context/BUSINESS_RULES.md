@@ -136,11 +136,22 @@ Este documento resume reglas funcionales de RitualFresh derivadas del análisis 
 ## Historial y estadísticas
 
 - El usuario autenticado puede consultar servicios asociados a su cuenta.
-- El historial debe ordenarse cronológicamente.
-- El historial debe permitir filtros por estado y rango de fechas.
+- La identidad se obtiene de la sesión y no de identificadores recibidos por la API.
+- El historial admite exclusivamente los estados `PENDING`, `COMPLETED` y `CANCELLED`.
+- El historial se ordena por fecha pactada más reciente y se pagina con un máximo de 20 registros.
+- El historial permite filtros opcionales por estado y rango inclusivo de fechas.
+- La fecha inicial no puede ser posterior a la fecha final.
+- Cada registro contiene la información completa de la ficha lateral; un importe nulo se presenta como `Importe no disponible`.
 - Si no existen servicios asociados, debe mostrarse estado vacío.
-- El trabajador puede visualizar trabajos realizados, promedio de calificaciones y métricas por período.
-- El cliente puede visualizar servicios contratados, gastos, categorías más utilizadas y trabajadores frecuentes.
+- La interfaz diferencia la ausencia total de historial de una consulta filtrada sin resultados.
+- Los períodos estadísticos son ventanas móviles de 7, 30 o 365 días e incluyen el día actual.
+- Las series temporales agrupan 7 días por día, 30 días por semanas consecutivas y 365 días por mes calendario.
+- El trabajador contabiliza sólo trabajos `COMPLETED` y promedia únicamente las calificaciones disponibles.
+- La actividad efectiva del cliente incluye registros `PENDING` y `COMPLETED`.
+- Los registros `CANCELLED` se excluyen de todas las estadísticas del cliente.
+- El gasto, las categorías y los trabajadores frecuentes del cliente se calculan sólo con registros `COMPLETED`.
+- Los trabajadores frecuentes se ordenan por cantidad y se limitan a los cinco primeros.
+- M06 no expone escritura pública; los módulos de contratación, calificación y pago alimentarán el read model internamente.
 
 ## Calificaciones y reputación
 

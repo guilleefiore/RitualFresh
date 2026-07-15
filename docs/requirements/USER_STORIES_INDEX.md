@@ -47,3 +47,8 @@ Este índice resume las historias de usuario definidas en el diseño del sistema
 | US01-M11-RF01 | Reclamos e Incidencias | Registrar reclamo o incidencia |
 | US02-M11-RF02 | Reclamos e Incidencias | Gestión administrativa de reclamos |
 | US03-M11-RF03 | Reclamos e Incidencias | Notificación de resolución de reclamo |
+
+## Especificaciones detalladas disponibles
+
+- [M01 - Gestión de Usuarios y Autenticación](M01_USUARIOS_AUTENTICACION.md)
+- [M06 - Historial y Estadísticas](M06_HISTORIAL_ESTADISTICAS.md)

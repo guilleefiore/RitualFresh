@@ -1,6 +1,10 @@
 package com.ritualfresh.security;
 
 import com.ritualfresh.admin.controller.AdminController;
+import com.ritualfresh.admin.repository.AdminStatusChangeRepository;
+import com.ritualfresh.admin.repository.AdminUserQueryRepository;
+import com.ritualfresh.admin.repository.InMemoryAdminStatusChangeRepository;
+import com.ritualfresh.admin.repository.InMemoryAdminUserQueryRepository;
 import com.ritualfresh.admin.service.AdminService;
 import com.ritualfresh.auth.controller.UserController;
 import com.ritualfresh.auth.model.User;
@@ -13,6 +17,12 @@ import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.notifications.InMemoryAccountEmailService;
 import com.ritualfresh.notifications.service.AccountEmailService;
+import com.ritualfresh.history.controller.HistoryController;
+import com.ritualfresh.history.controller.StatisticsController;
+import com.ritualfresh.history.repository.InMemoryServiceHistoryRecordRepository;
+import com.ritualfresh.history.repository.ServiceHistoryRecordRepository;
+import com.ritualfresh.history.service.HistoryService;
+import com.ritualfresh.history.service.StatisticsService;
 import com.ritualfresh.profiles.controller.ProfileController;
 import com.ritualfresh.profiles.repository.ClientProfileRepository;
 import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
@@ -51,6 +61,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         UserController.class,
         ProfileController.class,
         AdminController.class,
+        HistoryController.class,
+        StatisticsController.class,
         FileUploadController.class
 })
 @Import({
@@ -141,6 +153,55 @@ class SecurityIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.message").value("No posee permisos para acceder a esta funcionalidad."));
+    }
+
+    @Test
+    void clientAndWorkerCanAccessTheirOwnHistory() throws Exception {
+        persistSession("token-history-client", UserRole.CLIENT, LocalDateTime.now().plusHours(1), null);
+        persistSession("token-history-worker", UserRole.WORKER, LocalDateTime.now().plusHours(1), null);
+
+        mockMvc.perform(get("/api/history/services")
+                        .header("Authorization", "Bearer token-history-client"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+
+        mockMvc.perform(get("/api/history/services")
+                        .header("Authorization", "Bearer token-history-worker"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void statisticsEndpointsAreRestrictedToTheirMatchingRole() throws Exception {
+        persistSession("token-statistics-client", UserRole.CLIENT, LocalDateTime.now().plusHours(1), null);
+        persistSession("token-statistics-worker", UserRole.WORKER, LocalDateTime.now().plusHours(1), null);
+
+        mockMvc.perform(get("/api/statistics/clients/me")
+                        .header("Authorization", "Bearer token-statistics-client"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.period").value("LAST_30_DAYS"));
+
+        mockMvc.perform(get("/api/statistics/workers/me")
+                        .header("Authorization", "Bearer token-statistics-worker"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.period").value("LAST_30_DAYS"));
+
+        mockMvc.perform(get("/api/statistics/workers/me")
+                        .header("Authorization", "Bearer token-statistics-client"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/statistics/clients/me")
+                        .header("Authorization", "Bearer token-statistics-worker"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminCannotAccessClientOrWorkerHistory() throws Exception {
+        persistSession("token-history-admin", UserRole.ADMIN, LocalDateTime.now().plusHours(1), null);
+
+        mockMvc.perform(get("/api/history/services")
+                        .header("Authorization", "Bearer token-history-admin"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -413,6 +474,11 @@ class SecurityIntegrationTest {
         }
 
         @Bean
+        ServiceHistoryRecordRepository serviceHistoryRecordRepository() {
+            return new InMemoryServiceHistoryRecordRepository();
+        }
+
+        @Bean
         AccountEmailService accountEmailService() {
             return new InMemoryAccountEmailService();
         }
@@ -436,8 +502,36 @@ class SecurityIntegrationTest {
         }
 
         @Bean
-        AdminService adminService(UserService userService, UserRepository userRepository) {
-            return new AdminService(userService, userRepository);
+        HistoryService historyService(
+                UserService userService,
+                ServiceHistoryRecordRepository historyRepository) {
+            return new HistoryService(userService, historyRepository);
+        }
+
+        @Bean
+        StatisticsService statisticsService(
+                UserService userService,
+                ServiceHistoryRecordRepository historyRepository) {
+            return new StatisticsService(userService, historyRepository);
+        }
+
+        @Bean
+        AdminUserQueryRepository adminUserQueryRepository(UserRepository userRepository) {
+            return new InMemoryAdminUserQueryRepository(userRepository);
+        }
+
+        @Bean
+        AdminStatusChangeRepository adminStatusChangeRepository() {
+            return new InMemoryAdminStatusChangeRepository();
+        }
+
+        @Bean
+        AdminService adminService(
+                UserService userService,
+                UserRepository userRepository,
+                AdminUserQueryRepository adminUserQueryRepository,
+                AdminStatusChangeRepository adminStatusChangeRepository) {
+            return new AdminService(userService, userRepository, adminUserQueryRepository, adminStatusChangeRepository);
         }
 
         @Bean

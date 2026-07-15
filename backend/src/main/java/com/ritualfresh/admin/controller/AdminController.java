@@ -1,9 +1,13 @@
 package com.ritualfresh.admin.controller;
 
 import com.ritualfresh.admin.dto.AdminMetricsResponse;
-import com.ritualfresh.admin.dto.AdminUserResponse;
+import com.ritualfresh.admin.dto.AdminStatusHistoryResponse;
+import com.ritualfresh.admin.dto.AdminUserDetailResponse;
 import com.ritualfresh.admin.dto.AdminUserStatusRequest;
+import com.ritualfresh.admin.dto.AdminUsersPageResponse;
 import com.ritualfresh.admin.service.AdminService;
+import com.ritualfresh.auth.model.AccountStatus;
+import com.ritualfresh.auth.model.UserRole;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,10 +17,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -25,30 +28,45 @@ import java.util.List;
 public class AdminController {
     private final AdminService adminService;
 
-    // GET /api/admin/users - Lista todos los usuarios
     @GetMapping("/users")
-    public List<AdminUserResponse> listUsers(Authentication authentication) {
+    public AdminUsersPageResponse listUsers(
+            Authentication authentication,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) UserRole role,
+            @RequestParam(required = false) AccountStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
         extractSessionToken(authentication);
-        return adminService.listUsers();
+        return adminService.listUsers(query, role, status, page, size, sort, direction);
     }
 
-    // GET /api/admin/users/{id} - Obtiene los datos de un usuario específico
     @GetMapping("/users/{id}")
-    public AdminUserResponse getUser(
+    public AdminUserDetailResponse getUser(
             Authentication authentication,
             @PathVariable Long id) {
         extractSessionToken(authentication);
         return adminService.getUser(id);
     }
 
-    // PATCH /api/admin/users/{id}/status - Cambia el estado de cuenta de un usuario
     @PatchMapping("/users/{id}/status")
-    public AdminUserResponse updateUserStatus(
+    public AdminUserDetailResponse updateUserStatus(
             Authentication authentication,
             @PathVariable Long id,
             @Valid @RequestBody AdminUserStatusRequest request) {
         extractSessionToken(authentication);
         return adminService.updateUserStatus(id, request);
+    }
+
+    @GetMapping("/users/{id}/status-history")
+    public AdminStatusHistoryResponse getStatusHistory(
+            Authentication authentication,
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        extractSessionToken(authentication);
+        return adminService.getStatusHistory(id, page, size);
     }
 
     // GET /api/admin/metrics - Obtiene estadísticas de usuarios

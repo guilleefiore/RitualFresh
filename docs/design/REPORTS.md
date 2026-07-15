@@ -4,6 +4,15 @@
 
 Los reportes permiten analizar actividad operativa, historial, reclamos, contrataciones e indicadores de desempeño dentro de RitualFresh.
 
+## Estado implementado
+
+- El dashboard administrativo actual muestra métricas de usuarios por rol y estado, además de actividad reciente. Las métricas de contrataciones, reclamos, calificaciones e importes continúan previstas para módulos posteriores.
+- M06 incorpora estadísticas personales, no administrativas:
+  - el trabajador consulta trabajos completados, promedio de calificaciones disponibles y evolución temporal;
+  - el cliente consulta servicios efectivos, gasto, categorías y hasta cinco trabajadores frecuentes;
+  - ambas vistas ofrecen períodos móviles de 7, 30 y 365 días.
+- Los reportes tabulares completos de contrataciones y reclamos todavía no están implementados.
+
 ## REP-01 - Dashboard Administrativo
 
 Permite al administrador visualizar métricas generales del sistema.

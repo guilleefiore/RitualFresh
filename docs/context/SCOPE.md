@@ -66,8 +66,10 @@ Se priorizan funcionalidades que permitan demostrar el flujo completo del sistem
 
 En el estado actual del repositorio, el backend ya implementa una base operativa para:
 
-- `M01` autenticación, validación, recuperación y sesiones opacas con Spring Security
-- `M02` perfiles de cliente y trabajador
-- soporte administrativo mínimo para usuarios y métricas
+- `M01`: autenticación, validación, recuperación y sesiones opacas con Spring Security.
+- `M02`: perfiles de cliente y trabajador, incluidas preferencias estructuradas del cliente.
+- `M05`: conversaciones, mensajes persistidos, lectura, presencia y comunicación WebSocket; su habilitación definitiva depende de `M04`.
+- `M06`: historial persistente y estadísticas por rol; la alimentación interna de registros depende de `M04`, `M07` y `M09`.
+- soporte administrativo operativo para directorio, detalle, métricas y cambios de estado auditados.
 
-Los módulos restantes continúan como alcance funcional previsto, pero no cuentan todavía con implementación completa.
+En frontend se encuentran disponibles autenticación, perfiles, administración, chat, historial y estadísticas mediante rutas protegidas. Los módulos restantes continúan como alcance funcional previsto, pero todavía no cuentan con implementación completa.

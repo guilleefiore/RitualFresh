@@ -38,15 +38,27 @@ Una sola card centralizada (`profile-form-card`) con `max-width: 960px`, fondo b
 - Subtítulo con la descripción del paso
 - Barra de progreso que muestra el % de completitud, animada al cambiar
 
-### Secciones del formulario (en orden)
+### Secciones del formulario
 
-1. **Foto de perfil** (obligatoria) — preview circular de 140px, con validación y mensaje de error
-2. **Datos personales** — chips informativos con nombre, email y rol (solo lectura, desde autenticación)
-3. **Datos profesionales** (WORKER) / **Datos de contacto y domicilio** (CLIENT)
-4. **Especialidades** (WORKER) — selector de chips
-5. **Disponibilidad** (WORKER) — selector de días + horarios
-6. **Precio** (WORKER) — precio por hora
-7. **Footer** — Cancelar (link al home) + Guardar
+El encabezado, el progreso y la carga de foto son comunes a ambos roles. Debajo, los datos se presentan en paneles con una grilla responsive: 12 columnas en escritorio, dos columnas en tablet y una columna en móvil.
+
+**CLIENT**
+
+1. **Foto de perfil** (obligatoria) — carga con drag and drop, preview y validación.
+2. **Información personal** — resumen de correo y rol de solo lectura; nombre, apellido y teléfono editables.
+3. **Domicilio** — calle, número, piso, departamento, ciudad, provincia y código postal con anchos acordes a cada dato.
+4. **Preferencias de contratación** — descripción de frecuencia, horarios y servicios buscados.
+5. **Acciones** — Cancelar y Crear perfil/Guardar cambios.
+
+**WORKER**
+
+1. **Foto de perfil** (obligatoria) — carga con drag and drop, preview y validación.
+2. **Información personal** — resumen de correo y rol de solo lectura; nombre, apellido y teléfono editables.
+3. **Presentación profesional** — zona de trabajo, experiencia y descripción personal.
+4. **Servicios** — selector de especialidades.
+5. **Disponibilidad** — selector de días y rango horario.
+6. **Tarifa** — precio por hora orientativo.
+7. **Acciones** — Cancelar y Guardar perfil.
 
 ## Comportamiento
 
@@ -69,13 +81,24 @@ Campos principales:
 - código postal;
 - ciudad;
 - provincia;
-- preferencias de contratación.
+- frecuencia del servicio;
+- momentos preferidos;
+- servicios de interés, con detalle obligatorio al seleccionar `Otro`;
+- observaciones adicionales opcionales.
 
 Endpoints utilizados:
 
 - `GET /api/profiles/me`
 - `POST /api/profiles/clientes`
 - `PUT /api/profiles/clientes/me`
+
+Preferencias estructuradas enviadas por el frontend:
+
+- `serviceFrequency`: `ONE_TIME`, `WEEKLY`, `BIWEEKLY`, `MONTHLY` o `AS_NEEDED`;
+- `preferredTimeSlots`: una o más opciones entre `MORNING`, `AFTERNOON` y `FLEXIBLE`;
+- `serviceInterests`: uno o más servicios del catálogo;
+- `otherServiceInterest`: obligatorio cuando `serviceInterests` contiene `OTHER`;
+- `additionalNotes`: observaciones opcionales de hasta 500 caracteres.
 
 ### Variante trabajador
 

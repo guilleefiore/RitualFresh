@@ -98,3 +98,14 @@ Las pantallas críticas deben contemplar:
 - M09-WFR-07: Cancelación trabajador y strikes.
 - M09-WFR-08: Estado de liquidación al trabajador.
 - M10-WFR-01: Seleccionar ubicación.
+
+## Estado visual implementado de M06
+
+- `/history` utiliza una línea temporal como elemento visual principal y badges semánticos para pendiente, completado y cancelado.
+- La ficha de servicio se presenta lateralmente en desktop y como panel superpuesto en móvil.
+- Los filtros de estado y fechas distinguen el historial vacío de una consulta sin coincidencias.
+- `/statistics` mantiene una única ruta y adapta las métricas al rol autenticado.
+- Los períodos se presentan como controles seleccionables de 7, 30 y 365 días.
+- Los gráficos temporales utilizan SVG propio; categorías y tablas emplean CSS y HTML semántico.
+- Títulos, descripciones, valores alternativos, foco visible y preferencias de movimiento reducido forman parte del comportamiento accesible.
+- Los importes se muestran en ARS con locale `es-AR`; los valores nulos se comunican como `Importe no disponible`.
