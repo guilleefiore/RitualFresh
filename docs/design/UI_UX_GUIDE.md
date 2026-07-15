@@ -109,3 +109,14 @@ Las pantallas críticas deben contemplar:
 - Los gráficos temporales utilizan SVG propio; categorías y tablas emplean CSS y HTML semántico.
 - Títulos, descripciones, valores alternativos, foco visible y preferencias de movimiento reducido forman parte del comportamiento accesible.
 - Los importes se muestran en ARS con locale `es-AR`; los valores nulos se comunican como `Importe no disponible`.
+
+## Estado visual implementado de M08
+
+- La campana mantiene un badge con la cantidad exacta de notificaciones pendientes y un nombre accesible equivalente.
+- El panel utiliza la paleta oficial, tipografía Inter/Roboto y una línea temporal vertical para comunicar el orden cronológico.
+- Servicio, pago y reclamo poseen iconos y marcadores semánticos; el color nunca es la única señal de estado leído.
+- Las notificaciones no leídas usan fondo suave, punto azul y texto accesible `No leída`.
+- El panel contempla carga, error con reintento, información de contenido inaccesible y el vacío `No tienes notificaciones recientes`.
+- En desktop se ancla a la campana y en móvil se presenta como sheet inferior sin cambiar el orden de lectura.
+- `Escape`, clic exterior y el botón visible permiten cerrar; todos los botones tienen foco visible.
+- Las transiciones se desactivan mediante `prefers-reduced-motion`.

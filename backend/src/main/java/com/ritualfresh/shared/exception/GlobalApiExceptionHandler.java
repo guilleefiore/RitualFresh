@@ -17,6 +17,12 @@ public class GlobalApiExceptionHandler {
         return new ApiErrorResponse(HttpStatus.BAD_REQUEST.value(), excepcion.getMessage());
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiErrorResponse manejarRecursoNoEncontrado(ResourceNotFoundException excepcion) {
+        return new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), excepcion.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiErrorResponse manejarValidation(MethodArgumentNotValidException excepcion) {

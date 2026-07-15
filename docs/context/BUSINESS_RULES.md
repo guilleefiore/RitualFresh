@@ -126,12 +126,18 @@ Este documento resume reglas funcionales de RitualFresh derivadas del análisis 
 
 ## Notificaciones
 
-- Las notificaciones se generan ante eventos relevantes: solicitud aceptada, solicitud rechazada, pago aprobado, pago rechazado, cancelación, finalización, liquidación y resolución de reclamos.
-- El panel debe mostrar las notificaciones recientes ordenadas de más nuevas a más antiguas.
+- M08 sólo genera notificaciones mediante integración interna; no expone endpoints públicos de escritura ni datos simulados.
+- Los eventos iniciales son servicio confirmado, pago aprobado y reclamo resuelto; nuevos eventos deben incorporarse con criterios de aceptación propios.
+- Cada comando incluye una clave estable y sólo puede producir una notificación por destinatario para evitar duplicados.
+- El panel muestra como máximo las últimas 20 notificaciones ordenadas de más nuevas a más antiguas.
+- El badge cuenta todas las notificaciones no leídas del usuario, incluidas las anteriores a las 20 visibles.
 - Las notificaciones no leídas deben diferenciarse visualmente.
-- Al interactuar con una notificación, debe marcarse como leída.
-- Debe existir opción para marcar todas como leídas.
+- La identidad siempre se obtiene de la sesión; ningún usuario puede leer o modificar avisos ajenos.
+- Al interactuar con una notificación debe marcarse como leída de forma idempotente.
+- Marcar todas como leídas sólo afecta al usuario autenticado.
 - Si una notificación apunta a un contenido inexistente o inaccesible, debe mostrar mensaje informativo y marcarse igualmente como leída.
+- Las altas y los cambios de lectura se publican por WebSocket sólo después de persistirse y se resincronizan por REST al reconectar.
+- El correo de autenticación de M01 y las notificaciones in-app de M08 son responsabilidades independientes.
 
 ## Historial y estadísticas
 

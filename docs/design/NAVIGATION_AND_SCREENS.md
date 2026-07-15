@@ -38,6 +38,7 @@
 ## Navegación del administrador
 
 - Dashboard administrativo con métricas y actividad reciente.
+- Campana de notificaciones in-app en la barra de actividad.
 - Directorio de clientes y trabajadores con búsqueda, filtros y paginación.
 - Detalle de usuario con datos de cuenta e historial.
 - Cambio de estado de cuenta mediante confirmación y motivo obligatorio.
@@ -59,13 +60,24 @@
 - Solicitud aceptada → Pago.
 - Pago aprobado → Contratación confirmada.
 - Contratación finalizada → Calificación.
-- Notificación seleccionada → Pantalla relacionada.
+- Campana → Panel con las últimas 20 notificaciones.
+- Notificación seleccionada → Marcado de lectura → Pantalla relacionada si el recurso continúa accesible.
+- Notificación sin recurso accesible → Marcado de lectura → Mensaje informativo dentro del panel.
 
 ## Acceso por rol
 
 - Cliente: búsqueda, solicitud, pago, historial, calificaciones, estadísticas de cliente.
 - Trabajador: perfil profesional, solicitudes, contrataciones asignadas, estadísticas de trabajador, datos de cobro.
 - Administrador: dashboard, métricas, directorio de usuarios, detalle, cambio de estado e historial de auditoría.
+
+## Implementación frontend actual de notificaciones
+
+- La campana se encuentra en el `UserLayout` compartido por cliente y trabajador y en `AdminLayout`.
+- El panel no utiliza una ruta propia: se superpone a cualquier pantalla autenticada.
+- En escritorio se abre como menú flotante; en móvil se adapta a sheet inferior.
+- La línea temporal diferencia servicio confirmado, pago aprobado y reclamo resuelto mediante iconos y color semántico.
+- El estado vacío indica `No tienes notificaciones recientes`.
+- La lectura individual resuelve el destino después de persistir el cambio; la lectura masiva actualiza todos los elementos visibles de inmediato.
 
 ## Implementación frontend actual de perfiles
 

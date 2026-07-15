@@ -47,3 +47,12 @@ Este apartado no propone una modernización completa. Solo marca diferencias vis
 - Cualquier ajuste visual futuro debe tomar esta guía como referencia obligatoria.
 - Antes de introducir nuevos colores, componentes o variantes, revisar si ya existe un token o componente reutilizable.
 - Si hace falta un cambio global, centralizarlo en variables CSS o theme, no en valores duplicados dentro de componentes.
+
+## 8. Patrón implementado para notificaciones
+
+- La campana y el panel se reutilizan en los layouts autenticados; no deben copiarse dentro de páginas particulares.
+- El badge usa el color de error oficial y muestra el contador exacto.
+- La línea temporal vertical expresa el orden real de las últimas 20 notificaciones.
+- Azul identifica servicios, teal pagos aprobados y naranja reclamos resueltos; icono, título y texto mantienen la comprensión sin depender sólo del color.
+- En desktop el panel se ancla a la campana y en móvil utiliza un sheet inferior.
+- Deben conservarse estado de carga, error con reintento, vacío, contenido inaccesible, foco visible y reducción de movimiento.

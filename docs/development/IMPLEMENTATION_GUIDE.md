@@ -117,6 +117,8 @@ shared/
   - `/uploads/**` (archivos estáticos subidos, ej. fotos de perfil)
 - Endpoints administrativos:
   - `/api/admin/**` requiere `ROLE_ADMIN`
+- Endpoints de notificaciones:
+  - `/api/notifications/**` requiere cualquier usuario autenticado (`CLIENT`, `WORKER` o `ADMIN`)
 - Endpoints de perfil cliente:
   - `/api/profiles/clientes/**` requiere `ROLE_CLIENT`
 - Endpoints de perfil trabajador:
@@ -146,9 +148,13 @@ frontend/src/
 ├── modules/
 │   ├── auth/
 │   ├── admin/
+│   ├── chat/
+│   ├── history/
+│   ├── notifications/
 │   └── profiles/
 ├── shared/
 │   ├── guards/
+│   ├── layouts/
 │   └── services/
 ├── styles/
 │   ├── globals.css
@@ -163,6 +169,9 @@ frontend/src/
 - `modules/admin` concentra el shell administrativo, el dashboard, el directorio paginado, el detalle y el cambio de estado auditado.
 - `modules/profiles` ya implementa un flujo vertical mínimo para `M02`.
 - `modules/chat` ya implementa una pantalla inicial `/chat` para `M05`, consumiendo API REST y WebSocket.
+- `modules/history` implementa `/history` y `/statistics` para `M06`.
+- `modules/notifications` implementa el provider global, el panel y el canal en tiempo real de `M08`.
+- `shared/layouts/UserLayout` mantiene navegación y campana en todas las pantallas de cliente y trabajador.
 
 ### Flujo actual del módulo `profiles`
 
@@ -231,6 +240,33 @@ frontend/src/
   - los gráficos utilizan SVG y CSS propios con título, descripción y alternativa textual.
 - Integración pendiente:
   - `M04`, `M07` y `M09` deberán alimentar `ServiceHistoryRecord` mediante operaciones internas cuando definan sus contratos finales.
+
+### Flujo actual del módulo `notifications`
+
+- Paquete backend: `com.ritualfresh.notifications`; el correo de M01 permanece en `service/AccountEmailService` y el centro in-app utiliza clases con nombre explícito.
+- Read model persistente:
+  - `InAppNotification` relaciona el destinatario con tipo, contenido, recurso, clave de evento, creación y lectura;
+  - `NotificationType` admite inicialmente `SERVICE_CONFIRMED`, `PAYMENT_APPROVED` y `CLAIM_RESOLVED`;
+  - la tabla `in_app_notifications` impide duplicados por destinatario y `eventKey`;
+  - no existe endpoint público de escritura ni seeder.
+- Endpoints autenticados para todos los roles:
+  - `GET /api/notifications/recent`;
+  - `PATCH /api/notifications/{notificationId}/read`;
+  - `PATCH /api/notifications/read-all`.
+- Integración interna:
+  - `NotificationPublisher` recibe `NotificationCommand` desde módulos funcionales;
+  - `NotificationEventListener` procesa después del commit;
+  - `NotificationDestinationResolver` permite validar destinos sin acoplar M08 con módulos aún inexistentes.
+- Tiempo real:
+  - `/ws/notifications` autentica con la cookie opaca actual;
+  - cada usuario puede mantener varias conexiones y sólo recibe sus eventos;
+  - el frontend resincroniza por REST después de reconectar.
+- Frontend:
+  - `NotificationProvider` centraliza datos, operaciones optimistas y WebSocket;
+  - `NotificationBell` y `NotificationPanel` se reutilizan en `UserLayout` y `AdminLayout`;
+  - no existe una ruta independiente para notificaciones.
+- Integración pendiente:
+  - M04, M09 y M11 deben publicar los eventos definitivos; hasta entonces producción muestra el estado vacío real.
 
 ## Reglas de implementación frontend
 

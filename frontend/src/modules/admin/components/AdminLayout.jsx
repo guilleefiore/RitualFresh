@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { FiGrid, FiLogOut, FiUsers } from 'react-icons/fi';
 import { useState } from 'react';
 import { useAuth } from '../../auth/hooks/useAuth.js';
+import { NotificationBell } from '../../notifications/components/NotificationBell.jsx';
 import '../styles/adminDashboard.css';
 
 export function AdminLayout() {
@@ -60,6 +61,13 @@ export function AdminLayout() {
       </aside>
 
       <div className="admin-main">
+        <header className="admin-utility-bar">
+          <div>
+            <span>Centro de actividad</span>
+            <strong>Administración</strong>
+          </div>
+          <NotificationBell />
+        </header>
         <Outlet />
       </div>
     </div>

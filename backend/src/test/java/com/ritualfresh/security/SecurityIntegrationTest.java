@@ -16,7 +16,17 @@ import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.notifications.InMemoryAccountEmailService;
+import com.ritualfresh.notifications.controller.NotificationController;
+import com.ritualfresh.notifications.model.InAppNotification;
+import com.ritualfresh.notifications.model.NotificationResourceType;
+import com.ritualfresh.notifications.model.NotificationType;
+import com.ritualfresh.notifications.realtime.NotificationRealtimeDispatcher;
+import com.ritualfresh.notifications.realtime.NotificationRealtimePublisher;
+import com.ritualfresh.notifications.repository.InMemoryNotificationRepository;
+import com.ritualfresh.notifications.repository.NotificationRepository;
 import com.ritualfresh.notifications.service.AccountEmailService;
+import com.ritualfresh.notifications.service.NotificationDestinationService;
+import com.ritualfresh.notifications.service.NotificationService;
 import com.ritualfresh.history.controller.HistoryController;
 import com.ritualfresh.history.controller.StatisticsController;
 import com.ritualfresh.history.repository.InMemoryServiceHistoryRecordRepository;
@@ -52,6 +62,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -63,6 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         AdminController.class,
         HistoryController.class,
         StatisticsController.class,
+        NotificationController.class,
         FileUploadController.class
 })
 @Import({
@@ -84,6 +96,9 @@ class SecurityIntegrationTest {
 
     @Autowired
     private InMemoryAccountEmailService accountEmailService;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     @BeforeEach
     void setUp() {
@@ -202,6 +217,58 @@ class SecurityIntegrationTest {
         mockMvc.perform(get("/api/history/services")
                         .header("Authorization", "Bearer token-history-admin"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void everyAuthenticatedRoleCanAccessItsOwnNotificationPanel() throws Exception {
+        persistSession("token-notifications-client", UserRole.CLIENT, LocalDateTime.now().plusHours(1), null);
+        persistSession("token-notifications-worker", UserRole.WORKER, LocalDateTime.now().plusHours(1), null);
+        persistSession("token-notifications-admin", UserRole.ADMIN, LocalDateTime.now().plusHours(1), null);
+
+        for (String token : java.util.List.of(
+                "token-notifications-client",
+                "token-notifications-worker",
+                "token-notifications-admin")) {
+            mockMvc.perform(get("/api/notifications/recent")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.items").isArray())
+                    .andExpect(jsonPath("$.unreadCount").value(0));
+        }
+    }
+
+    @Test
+    void notificationReadEndpointDoesNotExposeAnotherUsersNotification() throws Exception {
+        User owner = persistSession(
+                "token-notification-owner",
+                UserRole.CLIENT,
+                LocalDateTime.now().plusHours(1),
+                null);
+        persistSession(
+                "token-notification-intruder",
+                UserRole.WORKER,
+                LocalDateTime.now().plusHours(1),
+                null);
+        InAppNotification notification = notificationRepository.save(InAppNotification.create(
+                owner,
+                NotificationType.SERVICE_CONFIRMED,
+                "Servicio confirmado",
+                "La contratación fue confirmada.",
+                NotificationResourceType.CONTRACT,
+                42L,
+                "security-owner-event",
+                LocalDateTime.now()));
+
+        mockMvc.perform(patch("/api/notifications/{id}/read", notification.getId())
+                        .header("Authorization", "Bearer token-notification-intruder"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("La notificación indicada no existe."));
+
+        mockMvc.perform(patch("/api/notifications/{id}/read", notification.getId())
+                        .header("Authorization", "Bearer token-notification-owner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.notification.read").value(true))
+                .andExpect(jsonPath("$.unreadCount").value(0));
     }
 
     @Test
@@ -422,7 +489,7 @@ class SecurityIntegrationTest {
                 .andExpect(jsonPath("$.url").value("/uploads/test-image.webp"));
     }
 
-    private void persistSession(String token, UserRole role, LocalDateTime expiresAt, LocalDateTime closedAt) {
+    private User persistSession(String token, UserRole role, LocalDateTime expiresAt, LocalDateTime closedAt) {
         User user = User.register(new User.RegistrationData(
                 "Test",
                 "User",
@@ -441,6 +508,7 @@ class SecurityIntegrationTest {
         }
 
         userSessionRepository.save(session);
+        return user;
     }
 
     private String extractCookieValue(String setCookieHeader) {
@@ -479,6 +547,11 @@ class SecurityIntegrationTest {
         }
 
         @Bean
+        NotificationRepository notificationRepository() {
+            return new InMemoryNotificationRepository();
+        }
+
+        @Bean
         AccountEmailService accountEmailService() {
             return new InMemoryAccountEmailService();
         }
@@ -513,6 +586,39 @@ class SecurityIntegrationTest {
                 UserService userService,
                 ServiceHistoryRecordRepository historyRepository) {
             return new StatisticsService(userService, historyRepository);
+        }
+
+        @Bean
+        NotificationDestinationService notificationDestinationService() {
+            return new NotificationDestinationService(java.util.List.of());
+        }
+
+        @Bean
+        NotificationRealtimePublisher notificationRealtimePublisher() {
+            return (recipientId, type, payload) -> {
+                // WebMvcTest no abre conexiones WebSocket.
+            };
+        }
+
+        @Bean
+        NotificationRealtimeDispatcher notificationRealtimeDispatcher(
+                NotificationRealtimePublisher realtimePublisher) {
+            return new NotificationRealtimeDispatcher(realtimePublisher);
+        }
+
+        @Bean
+        NotificationService notificationService(
+                UserService userService,
+                UserRepository userRepository,
+                NotificationRepository notificationRepository,
+                NotificationDestinationService destinationService,
+                NotificationRealtimeDispatcher realtimeDispatcher) {
+            return new NotificationService(
+                    userService,
+                    userRepository,
+                    notificationRepository,
+                    destinationService,
+                    realtimeDispatcher);
         }
 
         @Bean
