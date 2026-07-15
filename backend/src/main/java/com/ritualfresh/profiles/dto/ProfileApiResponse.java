@@ -1,8 +1,12 @@
 package com.ritualfresh.profiles.dto;
 
 import com.ritualfresh.profiles.model.ProfileType;
+import com.ritualfresh.profiles.model.PreferredTimeSlot;
+import com.ritualfresh.profiles.model.ServiceFrequency;
+import com.ritualfresh.profiles.model.ServiceInterest;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 public record ProfileApiResponse(
         ProfileType profileType,
@@ -28,7 +32,11 @@ public record ProfileApiResponse(
         String postalCode,
         String city,
         String province,
-        String hiringPreferences) {
+        ServiceFrequency serviceFrequency,
+        Set<PreferredTimeSlot> preferredTimeSlots,
+        Set<ServiceInterest> serviceInterests,
+        String otherServiceInterest,
+        String additionalNotes) {
 
     public static ProfileApiResponse from(UserProfileResult result) {
         return new ProfileApiResponse(
@@ -55,6 +63,10 @@ public record ProfileApiResponse(
                 result.postalCode(),
                 result.city(),
                 result.province(),
-                result.hiringPreferences());
+                result.serviceFrequency(),
+                result.preferredTimeSlots(),
+                result.serviceInterests(),
+                result.otherServiceInterest(),
+                result.additionalNotes());
     }
 }

@@ -1,13 +1,16 @@
 package com.ritualfresh.auth.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import com.ritualfresh.auth.model.User;
+import com.ritualfresh.auth.model.UserRole;
+import com.ritualfresh.auth.model.AccountStatus;
 
 import java.util.Optional;
 
 // Repositorio técnico de Spring Data JPA para la entidad User.
-public interface UserJpaRepository extends JpaRepository<User, Long> {
+public interface UserJpaRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     // Busca un usuario por su email.
     Optional<User> findByEmail(String email);
 
@@ -19,4 +22,8 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
     // Verifica si ya existe un usuario con el email indicado.
     boolean existsByEmail(String email);
+
+    long countByRole(UserRole role);
+
+    long countByAccountStatus(AccountStatus accountStatus);
 }

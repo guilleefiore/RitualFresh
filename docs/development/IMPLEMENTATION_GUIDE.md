@@ -33,6 +33,7 @@ Este documento centraliza criterios técnicos para implementar RitualFresh de fo
 backend/src/main/java/com/ritualfresh/
 ├── admin/
 ├── auth/
+├── chat/
 ├── notifications/
 ├── profiles/
 └── shared/
@@ -159,8 +160,9 @@ frontend/src/
 
 - `app/router.jsx` centraliza las rutas públicas y protegidas.
 - `modules/auth` contiene login, registro, validación, recuperación y pantallas home mínimas por rol.
-- `modules/admin` concentra el dashboard administrativo, el listado embebido de usuarios, el detalle y el cambio de estado.
+- `modules/admin` concentra el shell administrativo, el dashboard, el directorio paginado, el detalle y el cambio de estado auditado.
 - `modules/profiles` ya implementa un flujo vertical mínimo para `M02`.
+- `modules/chat` ya implementa una pantalla inicial `/chat` para `M05`, consumiendo API REST y WebSocket.
 
 ### Flujo actual del módulo `profiles`
 
@@ -179,6 +181,56 @@ frontend/src/
 - Entrada de navegación actual:
   - `CLIENT`: desde `/client/home` mediante el botón `Ir a mi perfil`;
   - `WORKER`: desde `/worker/home` mediante el botón `Ir a mi perfil`.
+
+### Flujo actual del módulo `chat`
+
+- Ruta protegida: `/chat`.
+- Roles habilitados: `CLIENT` y `WORKER`.
+- Comportamiento:
+  - al ingresar, lista conversaciones existentes del usuario autenticado;
+  - permite abrir/reactivar una conversación por ID del otro usuario como puente temporal hasta integrar `M04`;
+  - carga los últimos 50 mensajes y permite cargar anteriores;
+  - envía mensajes escritos o predeterminados con límite de 500 caracteres;
+  - marca como leídos solo los mensajes visibles;
+  - usa `/ws/chat` para eventos de mensajes, lectura y conversaciones actualizadas;
+  - actualiza presencia mediante heartbeat.
+- Servicios frontend involucrados:
+  - `GET /api/chat/conversations`
+  - `POST /api/chat/conversations`
+  - `GET /api/chat/conversations/{conversationId}/messages`
+  - `POST /api/chat/conversations/{conversationId}/messages`
+  - `POST /api/chat/conversations/{conversationId}/read`
+  - `GET /api/chat/unread-count`
+  - `POST /api/chat/presence/heartbeat`
+- Integración pendiente:
+  - `ChatAccessPolicy` debe conectarse con `M04` para habilitar escritura solo cuando exista aceptación de ambas partes.
+
+### Flujo actual del módulo `history`
+
+- Paquete backend: `com.ritualfresh.history`, organizado en `controller`, `dto`, `model`, `repository` y `service`.
+- Read model persistente:
+  - `ServiceHistoryRecord` relaciona cliente y trabajador con servicio, categoría, fecha pactada, estado, importe y calificación opcional;
+  - `ServiceHistoryStatus` admite `PENDING`, `COMPLETED` y `CANCELLED`;
+  - Hibernate genera `service_history_records`;
+  - no existe un endpoint público de escritura ni un seeder de registros.
+- Repositorios:
+  - `JpaServiceHistoryRecordRepository` implementa filtros y paginación sobre PostgreSQL;
+  - `InMemoryServiceHistoryRecordRepository` permite probar las mismas reglas sin base externa.
+- Servicios backend:
+  - `HistoryService` resuelve ownership, rango inclusivo, orden descendente y páginas de hasta 20 registros;
+  - `StatisticsService` calcula ventanas móviles y métricas específicas para `CLIENT` y `WORKER`.
+- Endpoints protegidos:
+  - `GET /api/history/services?status&from&to&page&size` para `CLIENT` y `WORKER`;
+  - `GET /api/statistics/workers/me?period=...` sólo para `WORKER`;
+  - `GET /api/statistics/clients/me?period=...` sólo para `CLIENT`.
+- Frontend:
+  - `/history` incluye filtros, línea temporal, carga incremental y ficha lateral responsive;
+  - `/statistics` resuelve el dashboard según el rol y comienza en `LAST_30_DAYS`;
+  - `historyService.js` centraliza las solicitudes mediante `apiRequest`, que envía `credentials: include`;
+  - los efectos de ambas pantallas ejecutan cleanup para ignorar respuestas obsoletas;
+  - los gráficos utilizan SVG y CSS propios con título, descripción y alternativa textual.
+- Integración pendiente:
+  - `M04`, `M07` y `M09` deberán alimentar `ServiceHistoryRecord` mediante operaciones internas cuando definan sus contratos finales.
 
 ## Reglas de implementación frontend
 

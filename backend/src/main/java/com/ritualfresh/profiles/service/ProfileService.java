@@ -9,6 +9,9 @@ import com.ritualfresh.profiles.dto.UpdateClientProfileRequest;
 import com.ritualfresh.profiles.dto.UpdateWorkerProfileRequest;
 import com.ritualfresh.profiles.dto.UserProfileResult;
 import com.ritualfresh.profiles.model.ClientProfile;
+import com.ritualfresh.profiles.model.PreferredTimeSlot;
+import com.ritualfresh.profiles.model.ServiceFrequency;
+import com.ritualfresh.profiles.model.ServiceInterest;
 import com.ritualfresh.profiles.model.WorkerProfile;
 import com.ritualfresh.profiles.repository.ClientProfileRepository;
 import com.ritualfresh.profiles.repository.WorkerProfileRepository;
@@ -19,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 @Service
@@ -30,6 +36,8 @@ public class ProfileService {
     private static final Pattern POSTAL_CODE_PATTERN = Pattern.compile("^[A-Za-z0-9\\s-]{3,12}$");
     private static final Pattern AVAILABILITY_PATTERN = Pattern.compile("^.+ de ([01]\\d|2[0-3]):[0-5]\\d a ([01]\\d|2[0-3]):[0-5]\\d$");
     private static final int MIN_WORKER_DESCRIPTION_LENGTH = 30;
+    private static final int MAX_OTHER_SERVICE_LENGTH = 120;
+    private static final int MAX_ADDITIONAL_NOTES_LENGTH = 500;
 
     private final UserService userService;
     private final ClientProfileRepository clientProfileRepository;
@@ -47,6 +55,7 @@ public class ProfileService {
                 request.firstName(),
                 request.lastName(),
                 validatePhoneNumber(request.contactPhone()));
+        Set<ServiceInterest> serviceInterests = validateServiceInterests(request.serviceInterests());
 
         ClientProfile profile = new ClientProfile(
                 user,
@@ -59,7 +68,11 @@ public class ProfileService {
                 validatePostalCode(request.postalCode()),
                 validateText(request.city(), "localidad"),
                 validateText(request.province(), "provincia"),
-                validateText(request.hiringPreferences(), "preferencias de contratacion"));
+                validateServiceFrequency(request.serviceFrequency()),
+                validatePreferredTimeSlots(request.preferredTimeSlots()),
+                serviceInterests,
+                validateOtherServiceInterest(serviceInterests, request.otherServiceInterest()),
+                normalizeOptional(request.additionalNotes(), MAX_ADDITIONAL_NOTES_LENGTH, "observaciones adicionales"));
 
         return UserProfileResult.from(clientProfileRepository.save(profile));
     }
@@ -128,6 +141,7 @@ public class ProfileService {
 
         ClientProfile profile = clientProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new BusinessRuleException("El usuario no posee un perfil de cliente."));
+        Set<ServiceInterest> serviceInterests = validateServiceInterests(request.serviceInterests());
         profile.edit(
                 validatePhotoUrl(request.photoUrl()),
                 validatePhoneNumber(request.contactPhone()),
@@ -138,7 +152,11 @@ public class ProfileService {
                 validatePostalCode(request.postalCode()),
                 validateText(request.city(), "localidad"),
                 validateText(request.province(), "provincia"),
-                validateText(request.hiringPreferences(), "preferencias de contratacion"));
+                validateServiceFrequency(request.serviceFrequency()),
+                validatePreferredTimeSlots(request.preferredTimeSlots()),
+                serviceInterests,
+                validateOtherServiceInterest(serviceInterests, request.otherServiceInterest()),
+                normalizeOptional(request.additionalNotes(), MAX_ADDITIONAL_NOTES_LENGTH, "observaciones adicionales"));
 
         return UserProfileResult.from(clientProfileRepository.save(profile));
     }
@@ -237,6 +255,43 @@ public class ProfileService {
         return value;
     }
 
+    private ServiceFrequency validateServiceFrequency(ServiceFrequency frequency) {
+        if (frequency == null) {
+            throw new BusinessRuleException("Debe seleccionar la frecuencia del servicio.");
+        }
+
+        return frequency;
+    }
+
+    private Set<PreferredTimeSlot> validatePreferredTimeSlots(Set<PreferredTimeSlot> timeSlots) {
+        if (timeSlots == null || timeSlots.isEmpty() || timeSlots.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessRuleException("Debe seleccionar al menos un horario de preferencia.");
+        }
+
+        return new LinkedHashSet<>(timeSlots);
+    }
+
+    private Set<ServiceInterest> validateServiceInterests(Set<ServiceInterest> serviceInterests) {
+        if (serviceInterests == null || serviceInterests.isEmpty() || serviceInterests.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessRuleException("Debe seleccionar al menos un servicio de interes.");
+        }
+
+        return new LinkedHashSet<>(serviceInterests);
+    }
+
+    private String validateOtherServiceInterest(Set<ServiceInterest> serviceInterests, String otherServiceInterest) {
+        if (!serviceInterests.contains(ServiceInterest.OTHER)) {
+            return null;
+        }
+
+        String value = validateText(otherServiceInterest, "otro servicio de interes");
+        if (value.length() > MAX_OTHER_SERVICE_LENGTH) {
+            throw new BusinessRuleException("El otro servicio de interes no debe superar los 120 caracteres.");
+        }
+
+        return value;
+    }
+
     private int validateYearsOfExperience(Integer yearsOfExperience) {
         if (yearsOfExperience == null) {
             throw new BusinessRuleException("Debe completar los anios de experiencia.");
@@ -297,5 +352,14 @@ public class ProfileService {
         }
 
         return value.trim();
+    }
+
+    private String normalizeOptional(String value, int maxLength, String fieldName) {
+        String normalized = normalizeOptional(value);
+        if (normalized != null && normalized.length() > maxLength) {
+            throw new BusinessRuleException("El campo " + fieldName + " supera el maximo permitido.");
+        }
+
+        return normalized;
     }
 }

@@ -80,9 +80,20 @@ export function RoleHomePage({ roleLabel, title }) {
 
         <div className="dashboard-actions">
           {(user?.role === 'CLIENT' || user?.role === 'WORKER') ? (
-            <Link className="button button--ghost" to="/profiles">
-              Ir a mi perfil
-            </Link>
+            <>
+              <Link className="button button--ghost" to="/profiles">
+                Ir a mi perfil
+              </Link>
+              <Link className="button button--ghost" to="/chat">
+                Ir al chat
+              </Link>
+              <Link className="button button--ghost" to="/history">
+                Ver historial
+              </Link>
+              <Link className="button button--ghost" to="/statistics">
+                Ver estadísticas
+              </Link>
+            </>
           ) : null}
           <button className="button button--primary" type="button" onClick={handleLogout} disabled={busyAction === 'logout'}>
             {busyAction === 'logout' ? 'Cerrando...' : 'Cerrar sesión'}

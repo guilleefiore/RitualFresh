@@ -1,5 +1,11 @@
 package com.ritualfresh.profiles.dto;
 
+import com.ritualfresh.profiles.model.PreferredTimeSlot;
+import com.ritualfresh.profiles.model.ServiceFrequency;
+import com.ritualfresh.profiles.model.ServiceInterest;
+
+import java.util.Set;
+
 public record CreateClientProfileRequest(
         String firstName,
         String lastName,
@@ -12,5 +18,9 @@ public record CreateClientProfileRequest(
         String postalCode,
         String city,
         String province,
-        String hiringPreferences) {
+        ServiceFrequency serviceFrequency,
+        Set<PreferredTimeSlot> preferredTimeSlots,
+        Set<ServiceInterest> serviceInterests,
+        String otherServiceInterest,
+        String additionalNotes) {
 }

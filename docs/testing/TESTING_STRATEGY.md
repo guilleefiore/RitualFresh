@@ -143,6 +143,31 @@ Para la validación local del backend y de la persistencia en PostgreSQL se reco
      - Verifica cierre de sesión y rechazo posterior del mismo token.
 18. `GET /api/admin/users`
      - Verifica acceso sólo con un usuario `ADMIN` autenticado en una sesión separada.
+     - Verifica búsqueda, filtros y paginación sin incluir cuentas administrativas.
+19. `PATCH /api/admin/users/{id}/status`
+     - Verifica una transición permitida con motivo obligatorio.
+     - Verifica que el cambio y su auditoría se persistan juntos.
+20. `GET /api/admin/users/{id}/status-history`
+     - Verifica el historial paginado en orden descendente por fecha.
+
+##### Flujo manual para `M06`
+
+M06 no ofrece escritura pública. Para probar datos no vacíos se deben utilizar registros generados por integración interna o fixtures controlados; no se deben agregar endpoints temporales ni seeds de producción.
+
+1. Iniciar sesión como `CLIENT` y conservar la cookie `RITUALFRESH_SESSION`.
+2. `GET /api/history/services?page=0&size=20`
+   - Verificar ownership, orden descendente y metadatos de paginación.
+3. `GET /api/history/services?status=COMPLETED&from=2026-07-01&to=2026-07-31&page=0&size=20`
+   - Verificar estado, rango inclusivo y contenido completo de cada ficha.
+4. Repetir el historial con un usuario `WORKER` y confirmar que la contraparte sea el cliente.
+5. Enviar un rango con `from` posterior a `to` y verificar respuesta `400`.
+6. `GET /api/statistics/clients/me?period=LAST_30_DAYS`
+   - Verificar actividad efectiva, gasto, categorías, trabajadores frecuentes y exclusión de cancelados.
+7. `GET /api/statistics/workers/me?period=LAST_30_DAYS`
+   - Verificar trabajos completados, promedio de registros calificados y serie temporal.
+8. Repetir ambas estadísticas con `LAST_7_DAYS` y `LAST_365_DAYS`.
+9. Confirmar respuestas `403` al intercambiar los endpoints de cliente y trabajador y al intentar acceder como `ADMIN`.
+10. Validar el estado vacío con una cuenta sin registros asociados.
 
 ##### Flujo manual para login con Google (OAuth 2.0)
 
@@ -204,7 +229,9 @@ Flujo recomendado para validar la pantalla implementada en React:
    - modificar al menos un campo y guardar nuevamente.
 8. Confirmar que el resumen inferior refleje el último estado persistido.
 9. Validar el control por rol:
-   - `CLIENT` debe ver campos de contacto, domicilio y preferencias;
+   - `CLIENT` debe ver campos de contacto, domicilio, frecuencia, momentos preferidos y servicios de interés;
+   - seleccionar `Otro`, verificar que aparezca su campo obligatorio y que se limpie al desmarcar la opción;
+   - guardar varias preferencias y confirmar que se precarguen al volver a entrar;
    - `WORKER` debe ver campos de descripción profesional, experiencia, servicios, disponibilidad y precio.
 10. Validar error esperado:
    - intentar guardar con campos obligatorios vacíos;
@@ -218,10 +245,13 @@ Observación actual:
 
 1. Iniciar sesión con un usuario `ADMIN`.
 2. Abrir `/admin/home`.
-3. Verificar la carga de métricas y de la tabla de usuarios.
-4. Ingresar al detalle de un usuario desde `Ver detalles`.
-5. Confirmar navegación a `/admin/users/:userId`.
-6. Cambiar el estado de cuenta y validar persistencia de la actualización.
+3. Verificar la carga de métricas y de los últimos usuarios registrados.
+4. Abrir `/admin/users` y probar búsqueda, rol, estado, orden y paginación.
+5. Ingresar al detalle de un usuario desde `Ver usuario`.
+6. Confirmar navegación a `/admin/users/:userId`.
+7. Cambiar el estado de cuenta indicando un motivo obligatorio.
+8. Verificar el nuevo estado y la aparición del registro en el historial.
+9. Confirmar que las cuentas `ADMIN` no aparecen ni pueden gestionarse mediante una URL directa.
 
 Configuración mínima sugerida:
 
@@ -230,7 +260,7 @@ Configuración mínima sugerida:
 - Para frontend o pruebas cercanas al comportamiento final, reutilizar la cookie de sesión devuelta por login.
 - Para debugging manual o tests técnicos, el backend aún acepta `Authorization: Bearer <sessionToken>` como compatibilidad.
 
-La confirmación de persistencia se completa revisando las tablas creadas por Hibernate en PostgreSQL, por ejemplo `users`, `user_sessions`, `client_profiles` y `worker_profiles`.
+La confirmación de persistencia se completa revisando las tablas creadas por Hibernate en PostgreSQL: `users`, `user_sessions`, `client_profiles`, `worker_profiles`, `admin_user_status_changes`, `chat_conversations`, `chat_messages`, `chat_presence` y `service_history_records`.
 
 Si se documenta evidencia manual, conviene registrar:
 
@@ -276,6 +306,16 @@ Cobertura actual implementada en backend:
   - reglas de negocio y restricciones funcionales de perfiles
 - `AdminServiceTest`
   - métricas, cambio de estado y restricciones administrativas
+- `HistoryServiceTest`
+  - ownership por cliente o trabajador, filtros de estado, rango inclusivo, orden, paginación, validación de fechas y vacío
+- `StatisticsServiceTest`
+  - ventanas móviles y agrupación diaria, semanal y mensual
+  - promedio sobre registros calificados, importes nulos y exclusión de cancelados
+  - actividad efectiva del cliente, categorías completadas y orden/límite de trabajadores frecuentes
+- `SecurityIntegrationTest`
+  - acceso de `CLIENT` y `WORKER` al historial propio
+  - separación por rol de `/api/statistics/clients/me` y `/api/statistics/workers/me`
+  - rechazo de `ADMIN` en el historial funcional
 
 ### Pruebas frontend
 
@@ -288,6 +328,19 @@ Casos mínimos:
 - Modales de confirmación.
 - Badges de notificaciones.
 - Filtros de búsqueda.
+- Historial sin registros y filtros sin coincidencias.
+- Panel lateral del historial en desktop y móvil.
+- Cambio rápido de filtros o período sin mostrar respuestas obsoletas.
+- Gráficos y tablas de estadísticas con lectura accesible.
+
+Validación manual de M06:
+
+1. Iniciar sesión como cliente y como trabajador en sesiones separadas.
+2. Abrir `/history`, aplicar cada estado y un rango de fechas, y verificar la ficha lateral en viewport desktop y móvil.
+3. Confirmar que `Cargar más servicios` conserva los registros previos.
+4. Abrir `/statistics` y alternar 7, 30 y 365 días; verificar métricas, gráficos, categorías y trabajadores frecuentes según el rol.
+5. Verificar los vacíos sin datos y el mensaje específico cuando los filtros no producen coincidencias.
+6. Confirmar que los importes utilizan formato ARS y que un importe nulo se presenta como `Importe no disponible`.
 
 ## Evidencia de pruebas
 

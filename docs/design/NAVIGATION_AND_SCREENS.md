@@ -37,9 +37,10 @@
 
 ## Navegación del administrador
 
-- Dashboard administrativo.
-- Detalle de usuario.
-- Cambio de estado de cuenta.
+- Dashboard administrativo con métricas y actividad reciente.
+- Directorio de clientes y trabajadores con búsqueda, filtros y paginación.
+- Detalle de usuario con datos de cuenta e historial.
+- Cambio de estado de cuenta mediante confirmación y motivo obligatorio.
 
 ## Transiciones relevantes
 
@@ -50,6 +51,8 @@
 - Inicio de sesión trabajador → Inicio trabajador.
 - Inicio cliente → Mi perfil (`/profiles`).
 - Inicio trabajador → Mi perfil profesional (`/profiles`).
+- Inicio cliente o trabajador → Historial (`/history`).
+- Inicio cliente o trabajador → Estadísticas propias (`/statistics`).
 - Mi perfil sin datos previos → Alta inicial del perfil correspondiente al rol.
 - Mi perfil con datos existentes → Edición del perfil correspondiente al rol.
 - Búsqueda → Resultados → Detalle de trabajador → Solicitud de contratación.
@@ -62,18 +65,30 @@
 
 - Cliente: búsqueda, solicitud, pago, historial, calificaciones, estadísticas de cliente.
 - Trabajador: perfil profesional, solicitudes, contrataciones asignadas, estadísticas de trabajador, datos de cobro.
-- Administrador: dashboard, métricas, listado embebido de usuarios, detalle y cambio de estado.
+- Administrador: dashboard, métricas, directorio de usuarios, detalle, cambio de estado e historial de auditoría.
 
 ## Implementación frontend actual de perfiles
 
 - La ruta protegida compartida es `/profiles`.
-- `CLIENT` visualiza y completa datos de contacto, domicilio y preferencias de contratación.
+- `CLIENT` visualiza y completa datos de contacto, domicilio y preferencias estructuradas de contratación: frecuencia, momentos preferidos, servicios de interés y observaciones opcionales.
 - `WORKER` visualiza y completa descripción profesional, experiencia, servicios, zona, disponibilidad y precio orientativo.
 - La misma pantalla resuelve alta o edición según la respuesta de `GET /api/profiles/me`.
 
 ## Implementación frontend actual de admin
 
 - La ruta protegida principal es `/admin/home`.
-- El dashboard muestra métricas y la tabla de usuarios en la misma pantalla.
+- El dashboard muestra métricas operativas y los últimos usuarios registrados.
+- El directorio independiente se encuentra en `/admin/users` y resuelve búsqueda, filtros, ordenamiento y paginación en el backend.
 - El detalle navega a `/admin/users/:userId`.
+- El detalle muestra únicamente clientes o trabajadores, las transiciones permitidas y el historial de cambios con su motivo.
 - No existe todavía una pantalla independiente para reclamos, reportes o configuración.
+
+## Implementación frontend actual de historial y estadísticas
+
+- `/history` es una ruta protegida compartida por `CLIENT` y `WORKER`.
+- El historial permite filtrar por estado y rango inclusivo, cargar páginas de 20 elementos y abrir una ficha lateral sin navegar a otra ruta.
+- La interfaz diferencia un historial inexistente de una búsqueda sin coincidencias.
+- `/statistics` resuelve el dashboard según el rol autenticado y utiliza los últimos 30 días como período inicial.
+- El trabajador visualiza trabajos completados, promedio de calificaciones y evolución temporal.
+- El cliente visualiza actividad efectiva, gasto, categorías y hasta cinco trabajadores frecuentes; los cancelados quedan excluidos.
+- Los gráficos se construyen con SVG y CSS del proyecto, incluyen título, descripción y una alternativa textual accesible.

@@ -48,7 +48,11 @@ public class ProfileController {
                 request.postalCode(),
                 request.city(),
                 request.province(),
-                request.hiringPreferences())));
+                request.serviceFrequency(),
+                request.preferredTimeSlots(),
+                request.serviceInterests(),
+                request.otherServiceInterest(),
+                request.additionalNotes())));
 
         return new ProfileOperationApiResponse("Profile de cliente creado correctamente.", profile);
     }
@@ -100,7 +104,11 @@ public class ProfileController {
                 request.postalCode(),
                 request.city(),
                 request.province(),
-                request.hiringPreferences())));
+                request.serviceFrequency(),
+                request.preferredTimeSlots(),
+                request.serviceInterests(),
+                request.otherServiceInterest(),
+                request.additionalNotes())));
 
         return new ProfileOperationApiResponse("Profile de cliente actualizado correctamente.", profile);
     }

@@ -1,16 +1,24 @@
 import { apiRequest } from '../../../shared/services/apiClient.js';
 
-// Obtiene la lista de todos los usuarios
-export function listUsers() {
-  return apiRequest('/api/admin/users');
+export function listUsers({ query = '', role = '', status = '', page = 0, size = 20, sort = 'createdAt', direction = 'desc' } = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+    sort,
+    direction,
+  });
+
+  if (query.trim()) params.set('query', query.trim());
+  if (role) params.set('role', role);
+  if (status) params.set('status', status);
+
+  return apiRequest(`/api/admin/users?${params.toString()}`);
 }
 
-// Obtiene los datos de un usuario específico
 export function getUser(userId) {
   return apiRequest(`/api/admin/users/${userId}`);
 }
 
-// Cambia el estado de cuenta de un usuario
 export function updateUserStatus(userId, statusRequest) {
   return apiRequest(`/api/admin/users/${userId}/status`, {
     method: 'PATCH',
@@ -18,7 +26,11 @@ export function updateUserStatus(userId, statusRequest) {
   });
 }
 
-// Obtiene métricas de usuarios (total, por rol, por estado)
+export function getUserStatusHistory(userId, { page = 0, size = 10 } = {}) {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  return apiRequest(`/api/admin/users/${userId}/status-history?${params.toString()}`);
+}
+
 export function getMetrics() {
   return apiRequest('/api/admin/metrics');
 }

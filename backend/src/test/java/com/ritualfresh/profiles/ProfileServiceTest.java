@@ -14,9 +14,13 @@ import com.ritualfresh.auth.repository.UserSessionRepository;
 import com.ritualfresh.notifications.InMemoryAccountEmailService;
 import com.ritualfresh.profiles.dto.CreateClientProfileRequest;
 import com.ritualfresh.profiles.dto.CreateWorkerProfileRequest;
+import com.ritualfresh.profiles.dto.UpdateClientProfileRequest;
 import com.ritualfresh.profiles.dto.UpdateWorkerProfileRequest;
 import com.ritualfresh.profiles.dto.UserProfileResult;
+import com.ritualfresh.profiles.model.PreferredTimeSlot;
 import com.ritualfresh.profiles.model.ProfileType;
+import com.ritualfresh.profiles.model.ServiceFrequency;
+import com.ritualfresh.profiles.model.ServiceInterest;
 import com.ritualfresh.profiles.repository.InMemoryClientProfileRepository;
 import com.ritualfresh.profiles.repository.InMemoryWorkerProfileRepository;
 import com.ritualfresh.profiles.repository.ClientProfileRepository;
@@ -32,6 +36,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,7 +78,10 @@ class ProfileServiceTest {
         assertEquals("https://cdn.example.com/cliente.png", result.photoUrl());
         assertEquals("2615555555", result.contactPhone());
         assertEquals("San Martin", result.streetName());
-        assertEquals("Limpieza semanal por la manana", result.hiringPreferences());
+        assertEquals(ServiceFrequency.WEEKLY, result.serviceFrequency());
+        assertEquals(Set.of(PreferredTimeSlot.MORNING), result.preferredTimeSlots());
+        assertEquals(Set.of(ServiceInterest.GENERAL_CLEANING), result.serviceInterests());
+        assertEquals("Limpieza semanal por la manana", result.additionalNotes());
         assertEquals(0, result.clientRating());
     }
 
@@ -93,6 +101,10 @@ class ProfileServiceTest {
                 "5500",
                 "Godoy Cruz",
                 "Mendoza",
+                ServiceFrequency.WEEKLY,
+                Set.of(PreferredTimeSlot.MORNING),
+                Set.of(ServiceInterest.GENERAL_CLEANING),
+                null,
                 "Limpieza semanal");
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(request));
@@ -116,6 +128,10 @@ class ProfileServiceTest {
                 "5500",
                 "Godoy Cruz",
                 "Mendoza",
+                ServiceFrequency.WEEKLY,
+                Set.of(PreferredTimeSlot.MORNING),
+                Set.of(ServiceInterest.GENERAL_CLEANING),
+                null,
                 "Limpieza semanal");
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(request));
@@ -237,6 +253,10 @@ class ProfileServiceTest {
                 "5500",
                 "Godoy Cruz",
                 "Mendoza",
+                ServiceFrequency.WEEKLY,
+                Set.of(PreferredTimeSlot.MORNING),
+                Set.of(ServiceInterest.GENERAL_CLEANING),
+                null,
                 "Limpieza semanal");
 
         BusinessRuleException exception = assertThrows(BusinessRuleException.class, () -> profileService.createClientProfile(request));
@@ -253,6 +273,93 @@ class ProfileServiceTest {
         UserProfileResult result = profileService.getMyProfile();
 
         assertEquals(ProfileType.CLIENT, result.profileType());
+    }
+
+    @Test
+    void requiresOtherServiceDescriptionWhenOtherIsSelected() {
+        LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
+        CreateClientProfileRequest request = new CreateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
+                "/uploads/cliente.png",
+                "2615555555",
+                "San Martin",
+                "123",
+                null,
+                null,
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                ServiceFrequency.AS_NEEDED,
+                Set.of(PreferredTimeSlot.FLEXIBLE),
+                Set.of(ServiceInterest.OTHER),
+                " ",
+                null);
+
+        BusinessRuleException exception = assertThrows(
+                BusinessRuleException.class,
+                () -> profileService.createClientProfile(request));
+
+        assertEquals("Debe completar el campo otro servicio de interes.", exception.getMessage());
+    }
+
+    @Test
+    void storesOtherServiceDescriptionWhenOtherIsSelected() {
+        LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
+        CreateClientProfileRequest request = new CreateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
+                "/uploads/cliente.png",
+                "2615555555",
+                "San Martin",
+                "123",
+                null,
+                null,
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                ServiceFrequency.AS_NEEDED,
+                Set.of(PreferredTimeSlot.FLEXIBLE),
+                Set.of(ServiceInterest.OTHER),
+                "Limpieza de tapizados",
+                null);
+
+        UserProfileResult result = profileService.createClientProfile(request);
+
+        assertEquals("Limpieza de tapizados", result.otherServiceInterest());
+    }
+
+    @Test
+    void updatesStructuredClientPreferences() {
+        LoginResult session = registerValidateAndLoginClient();
+        authenticate(session);
+        profileService.createClientProfile(validClientRequest());
+
+        UserProfileResult result = profileService.updateClientProfile(new UpdateClientProfileRequest(
+                "Guillermina",
+                "Fiore",
+                "/uploads/cliente.png",
+                "2615555555",
+                "San Martin",
+                "123",
+                "2",
+                "A",
+                "5500",
+                "Godoy Cruz",
+                "Mendoza",
+                ServiceFrequency.MONTHLY,
+                Set.of(PreferredTimeSlot.AFTERNOON, PreferredTimeSlot.FLEXIBLE),
+                Set.of(ServiceInterest.DEEP_CLEANING, ServiceInterest.OTHER),
+                "Limpieza de tapizados",
+                "Coordinar con anticipacion"));
+
+        assertEquals(ServiceFrequency.MONTHLY, result.serviceFrequency());
+        assertEquals(Set.of(PreferredTimeSlot.AFTERNOON, PreferredTimeSlot.FLEXIBLE), result.preferredTimeSlots());
+        assertEquals(Set.of(ServiceInterest.DEEP_CLEANING, ServiceInterest.OTHER), result.serviceInterests());
+        assertEquals("Limpieza de tapizados", result.otherServiceInterest());
+        assertEquals("Coordinar con anticipacion", result.additionalNotes());
     }
 
     private LoginResult registerValidateAndLoginClient() {
@@ -296,6 +403,10 @@ class ProfileServiceTest {
                 "5500",
                 "Godoy Cruz",
                 "Mendoza",
+                ServiceFrequency.WEEKLY,
+                Set.of(PreferredTimeSlot.MORNING),
+                Set.of(ServiceInterest.GENERAL_CLEANING),
+                null,
                 "Limpieza semanal por la manana");
     }
 

@@ -1,96 +1,116 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UserStatusForm } from './UserStatusForm.jsx';
+import { FiArrowRight, FiUser } from 'react-icons/fi';
 import '../styles/usersList.css';
 
-const ROLE_LABELS = {
-  ADMIN: 'Administrador',
+export const ROLE_LABELS = {
   CLIENT: 'Cliente',
   WORKER: 'Trabajador',
+  ADMIN: 'Administrador',
 };
 
-const STATUS_LABELS = {
+export const STATUS_LABELS = {
   ACTIVE: 'Activo',
   PENDING_VALIDATION: 'Pendiente',
   SUSPENDED: 'Suspendido',
   DELETED: 'Eliminado',
 };
 
-const STATUS_COLORS = {
-  ACTIVE: 'success',
-  PENDING_VALIDATION: 'warning',
-  SUSPENDED: 'error',
-  DELETED: 'info',
-};
-
-export function UsersList({ users, onUserUpdated }) {
-  const [editingUserId, setEditingUserId] = useState(null);
-
-  if (!users || users.length === 0) {
-    return <p className="empty-state">No hay usuarios para mostrar</p>;
+export function UsersList({ users, emptyMessage = 'No encontramos usuarios con esos criterios.' }) {
+  if (!users?.length) {
+    return (
+      <div className="admin-empty-state">
+        <span aria-hidden="true"><FiUser /></span>
+        <strong>Sin resultados</strong>
+        <p>{emptyMessage}</p>
+      </div>
+    );
   }
-
-  const handleStatusFormCancel = () => {
-    setEditingUserId(null);
-  };
-
-  const handleStatusUpdated = () => {
-    setEditingUserId(null);
-    if (onUserUpdated) {
-      onUserUpdated();
-    }
-  };
 
   return (
     <div className="users-list">
-      <table className="users-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{user.firstName} {user.lastName}</td>
-              <td>{user.email}</td>
-              <td>{ROLE_LABELS[user.role] || user.role}</td>
-              <td>
-                <span className={`badge badge-${STATUS_COLORS[user.accountStatus]}`}>
-                  {STATUS_LABELS[user.accountStatus] || user.accountStatus}
-                </span>
-              </td>
-              <td>
-                <Link to={`/admin/users/${user.id}`} className="btn-link">
-                  Ver detalles
-                </Link>
-                {editingUserId === user.id ? (
-                  <div className="status-form-inline">
-                    <UserStatusForm
-                      user={user}
-                      onStatusUpdated={handleStatusUpdated}
-                      onCancel={handleStatusFormCancel}
-                    />
-                  </div>
-                ) : (
-                  <button
-                    className="btn-link secondary"
-                    onClick={() => setEditingUserId(user.id)}
-                  >
-                    Cambiar estado
-                  </button>
-                )}
-              </td>
+      <div className="users-table-wrapper">
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Registrado</th>
+              <th><span className="sr-only">Acciones</span></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id}>
+                <td>
+                  <div className="user-cell">
+                    <span className="user-cell__avatar" aria-hidden="true">{getInitials(user)}</span>
+                    <div>
+                      <strong>{getDisplayName(user)}</strong>
+                      <span>{user.email}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{ROLE_LABELS[user.role] || user.role}</td>
+                <td><StatusBadge status={user.accountStatus} /></td>
+                <td>{formatDate(user.createdAt)}</td>
+                <td>
+                  <Link to={`/admin/users/${user.id}`} className="admin-row-action">
+                    <span>Ver usuario</span>
+                    <FiArrowRight aria-hidden="true" />
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="user-cards">
+        {users.map((user) => (
+          <article key={user.id} className="user-card-mobile">
+            <div className="user-cell">
+              <span className="user-cell__avatar" aria-hidden="true">{getInitials(user)}</span>
+              <div>
+                <strong>{getDisplayName(user)}</strong>
+                <span>{user.email}</span>
+              </div>
+            </div>
+            <div className="user-card-mobile__meta">
+              <span>{ROLE_LABELS[user.role] || user.role}</span>
+              <StatusBadge status={user.accountStatus} />
+            </div>
+            <Link to={`/admin/users/${user.id}`} className="admin-row-action">
+              <span>Ver usuario</span>
+              <FiArrowRight aria-hidden="true" />
+            </Link>
+          </article>
+        ))}
+      </div>
     </div>
   );
+}
+
+export function StatusBadge({ status }) {
+  return <span className={`status-badge status-badge--${String(status).toLowerCase()}`}>{STATUS_LABELS[status] || status}</span>;
+}
+
+export function getDisplayName(user) {
+  const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  return name || 'Sin nombre cargado';
+}
+
+export function formatDate(value, includeTime = false) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('es-AR', includeTime
+    ? { dateStyle: 'medium', timeStyle: 'short' }
+    : { dateStyle: 'medium' }).format(date);
+}
+
+function getInitials(user) {
+  const first = user?.firstName?.trim()?.[0] || user?.email?.[0] || 'U';
+  const last = user?.lastName?.trim()?.[0] || '';
+  return `${first}${last}`.toUpperCase();
 }

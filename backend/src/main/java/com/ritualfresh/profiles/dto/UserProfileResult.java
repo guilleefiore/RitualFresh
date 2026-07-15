@@ -2,10 +2,14 @@ package com.ritualfresh.profiles.dto;
 
 import com.ritualfresh.auth.model.User;
 import com.ritualfresh.profiles.model.ClientProfile;
+import com.ritualfresh.profiles.model.PreferredTimeSlot;
 import com.ritualfresh.profiles.model.ProfileType;
+import com.ritualfresh.profiles.model.ServiceFrequency;
+import com.ritualfresh.profiles.model.ServiceInterest;
 import com.ritualfresh.profiles.model.WorkerProfile;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 public record UserProfileResult(
         ProfileType profileType,
@@ -31,7 +35,11 @@ public record UserProfileResult(
         String postalCode,
         String city,
         String province,
-        String hiringPreferences) {
+        ServiceFrequency serviceFrequency,
+        Set<PreferredTimeSlot> preferredTimeSlots,
+        Set<ServiceInterest> serviceInterests,
+        String otherServiceInterest,
+        String additionalNotes) {
 
     public static UserProfileResult from(ClientProfile profile) {
         User user = profile.getUser();
@@ -60,7 +68,11 @@ public record UserProfileResult(
                 profile.getPostalCode(),
                 profile.getCity(),
                 profile.getProvince(),
-                profile.getHiringPreferences());
+                profile.getServiceFrequency(),
+                Set.copyOf(profile.getPreferredTimeSlots()),
+                Set.copyOf(profile.getServiceInterests()),
+                profile.getOtherServiceInterest(),
+                profile.getAdditionalNotes());
     }
 
     public static UserProfileResult from(WorkerProfile profile) {
@@ -83,6 +95,10 @@ public record UserProfileResult(
                 profile.getAvailability(),
                 profile.getHourlyRate(),
                 user.getPhoneNumber(),
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,

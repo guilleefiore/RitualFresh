@@ -1,55 +1,82 @@
 import { useEffect, useState } from 'react';
-import { listUsers, getMetrics } from '../services/adminService.js';
+import { getMetrics, listUsers } from '../services/adminService.js';
 
-// Hook para obtener la lista de usuarios
-export function useAdminUsers(refreshKey = 0) {
-  const [users, setUsers] = useState([]);
+const EMPTY_PAGE = {
+  content: [],
+  page: 0,
+  size: 20,
+  totalElements: 0,
+  totalPages: 0,
+};
+
+export function useAdminUsers(filters = {}, refreshKey = 0) {
+  const {
+    query = '',
+    role = '',
+    status = '',
+    page = 0,
+    size = 20,
+    sort = 'createdAt',
+    direction = 'desc',
+  } = filters;
+  const [result, setResult] = useState(EMPTY_PAGE);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    let cancelled = false;
+
+    async function fetchUsers() {
+      setIsLoading(true);
+      setError('');
+
       try {
-        setIsLoading(true);
-        const data = await listUsers();
-        setUsers(data || []);
-        setError(null);
-      } catch (err) {
-        setError(err.message || 'Error al cargar usuarios');
-        setUsers([]);
+        const data = await listUsers({ query, role, status, page, size, sort, direction });
+        if (!cancelled) setResult(data || EMPTY_PAGE);
+      } catch (requestError) {
+        if (!cancelled) {
+          setResult(EMPTY_PAGE);
+          setError(requestError.message || 'No se pudieron cargar los usuarios.');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
-    };
+    }
 
     fetchUsers();
-  }, [refreshKey]);
+    return () => { cancelled = true; };
+  }, [query, role, status, page, size, sort, direction, refreshKey]);
 
-  return { users, isLoading, error };
+  return { result, isLoading, error };
 }
 
-// Hook para obtener métricas de usuarios
 export function useAdminMetrics(refreshKey = 0) {
   const [metrics, setMetrics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchMetrics = async () => {
+    let cancelled = false;
+
+    async function fetchMetrics() {
+      setIsLoading(true);
+      setError('');
+
       try {
-        setIsLoading(true);
         const data = await getMetrics();
-        setMetrics(data);
-        setError(null);
-      } catch (err) {
-        setError(err.message || 'Error al cargar métricas');
-        setMetrics(null);
+        if (!cancelled) setMetrics(data);
+      } catch (requestError) {
+        if (!cancelled) {
+          setMetrics(null);
+          setError(requestError.message || 'No se pudieron cargar las métricas.');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
-    };
+    }
 
     fetchMetrics();
+    return () => { cancelled = true; };
   }, [refreshKey]);
 
   return { metrics, isLoading, error };

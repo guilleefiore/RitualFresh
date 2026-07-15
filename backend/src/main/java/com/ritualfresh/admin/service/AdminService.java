@@ -1,8 +1,16 @@
 package com.ritualfresh.admin.service;
 
+import com.ritualfresh.admin.dto.AdminAccountStatus;
 import com.ritualfresh.admin.dto.AdminMetricsResponse;
+import com.ritualfresh.admin.dto.AdminStatusChangeResponse;
+import com.ritualfresh.admin.dto.AdminStatusHistoryResponse;
+import com.ritualfresh.admin.dto.AdminUserDetailResponse;
 import com.ritualfresh.admin.dto.AdminUserResponse;
+import com.ritualfresh.admin.dto.AdminUsersPageResponse;
 import com.ritualfresh.admin.dto.AdminUserStatusRequest;
+import com.ritualfresh.admin.model.AdminUserStatusChange;
+import com.ritualfresh.admin.repository.AdminStatusChangeRepository;
+import com.ritualfresh.admin.repository.AdminUserQueryRepository;
 import com.ritualfresh.auth.model.AccountStatus;
 import com.ritualfresh.auth.model.User;
 import com.ritualfresh.auth.model.UserRole;
@@ -10,77 +18,126 @@ import com.ritualfresh.auth.repository.UserRepository;
 import com.ritualfresh.auth.service.UserService;
 import com.ritualfresh.shared.exception.BusinessRuleException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-// Servicio que gestiona operaciones administrativas: listar usuarios, cambiar estados, obtener métricas
 public class AdminService {
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final int MAX_HISTORY_PAGE_SIZE = 50;
+    private static final Set<String> ALLOWED_SORTS = Set.of(
+            "id", "firstName", "lastName", "email", "role", "accountStatus", "createdAt");
+
     private final UserService userService;
     private final UserRepository userRepository;
+    private final AdminUserQueryRepository adminUserQueryRepository;
+    private final AdminStatusChangeRepository statusChangeRepository;
 
-    // Obtiene todos los usuarios ordenados por ID (excluye al propio admin)
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
-    public List<AdminUserResponse> listUsers() {
-        User actor = requireAdmin();
-
-        return userRepository.findAll().stream()
-                .filter(user -> !user.getId().equals(actor.getId()))
-                .sorted(Comparator.comparing(User::getId))
-                .map(AdminUserResponse::from)
-                .toList();
-    }
-
-    // Obtiene los datos de un usuario específico por ID
-    @PreAuthorize("hasRole('ADMIN')")
-    @Transactional(readOnly = true)
-    public AdminUserResponse getUser(Long userId) {
+    public AdminUsersPageResponse listUsers(
+            String query,
+            UserRole role,
+            AccountStatus status,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
         requireAdmin();
+        if (role == UserRole.ADMIN) {
+            throw new BusinessRuleException("Las cuentas administrativas no se gestionan desde este listado.");
+        }
 
-        return AdminUserResponse.from(findUserById(userId));
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        String safeSort = sortBy != null && ALLOWED_SORTS.contains(sortBy) ? sortBy : "createdAt";
+        Sort.Direction safeDirection = "asc".equalsIgnoreCase(direction)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+        PageRequest pageable = PageRequest.of(safePage, safeSize, Sort.by(safeDirection, safeSort));
+        Page<AdminUserResponse> result = adminUserQueryRepository
+                .search(normalizeOptional(query), role, status, pageable)
+                .map(AdminUserResponse::from);
+
+        return AdminUsersPageResponse.from(result);
     }
 
-    // Cambia el estado de cuenta de un usuario (validando transiciones permitidas)
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
+    public AdminUserDetailResponse getUser(Long userId) {
+        requireAdmin();
+        User user = findManageableUser(userId);
+        return toDetail(user);
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public AdminUserResponse updateUserStatus(Long userId, AdminUserStatusRequest request) {
+    public AdminUserDetailResponse updateUserStatus(Long userId, AdminUserStatusRequest request) {
         User actor = requireAdmin();
+        if (request == null || request.status() == null) {
+            throw new BusinessRuleException("Debe seleccionar un estado de cuenta.");
+        }
 
-        User user = findUserById(userId);
+        User target = findManageableUser(userId);
+        AccountStatus previousStatus = target.getAccountStatus();
         AccountStatus newStatus = request.status().toAccountStatus();
-        validateStatusTransition(actor, user, newStatus);
-        user.changeAccountStatus(newStatus);
-        userRepository.save(user);
+        String reason = validateReason(request.reason());
+        validateStatusTransition(previousStatus, newStatus);
 
-        return AdminUserResponse.from(user);
+        target.changeAccountStatus(newStatus);
+        userRepository.save(target);
+        statusChangeRepository.save(AdminUserStatusChange.record(
+                actor,
+                target,
+                previousStatus,
+                newStatus,
+                reason,
+                LocalDateTime.now()));
+
+        return toDetail(target);
     }
 
-    // Obtiene estadísticas de usuarios: total, por rol y por estado
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
+    public AdminStatusHistoryResponse getStatusHistory(Long userId, int page, int size) {
+        requireAdmin();
+        User target = findManageableUser(userId);
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_HISTORY_PAGE_SIZE);
+        PageRequest pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "changedAt"));
+        Page<AdminStatusChangeResponse> result = statusChangeRepository
+                .findByTargetUserId(target.getId(), pageable)
+                .map(AdminStatusChangeResponse::from);
+
+        return AdminStatusHistoryResponse.from(result);
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public AdminMetricsResponse getMetrics() {
         requireAdmin();
 
-        List<User> users = userRepository.findAll();
-
         return new AdminMetricsResponse(
-                users.size(),
-                countByRole(users, UserRole.CLIENT),
-                countByRole(users, UserRole.WORKER),
-                countByRole(users, UserRole.ADMIN),
-                countByStatus(users, AccountStatus.ACTIVE),
-                countByStatus(users, AccountStatus.PENDING_VALIDATION),
-                countByStatus(users, AccountStatus.SUSPENDED),
-                countByStatus(users, AccountStatus.DELETED));
+                adminUserQueryRepository.countAll(),
+                adminUserQueryRepository.countByRole(UserRole.CLIENT),
+                adminUserQueryRepository.countByRole(UserRole.WORKER),
+                adminUserQueryRepository.countByRole(UserRole.ADMIN),
+                adminUserQueryRepository.countByStatus(AccountStatus.ACTIVE),
+                adminUserQueryRepository.countByStatus(AccountStatus.PENDING_VALIDATION),
+                adminUserQueryRepository.countByStatus(AccountStatus.SUSPENDED),
+                adminUserQueryRepository.countByStatus(AccountStatus.DELETED));
     }
 
-    // Valida que el usuario autenticado sea administrador
     private User requireAdmin() {
         User user = userService.getAuthenticatedUser();
         if (user.getRole() != UserRole.ADMIN) {
@@ -90,53 +147,63 @@ public class AdminService {
         return user;
     }
 
-    // Obtiene un usuario por ID, lanza excepción si no existe
-    private User findUserById(Long userId) {
+    private User findManageableUser(Long userId) {
         if (userId == null) {
             throw new BusinessRuleException("El usuario no existe.");
         }
 
-        return userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessRuleException("El usuario no existe."));
-    }
-
-    // Valida que la transición de estado sea permitida y que no se suspenda/elimine a sí mismo
-    private void validateStatusTransition(User actor, User target, AccountStatus newStatus) {
-        if (target.getId().equals(actor.getId())
-                && (newStatus == AccountStatus.SUSPENDED || newStatus == AccountStatus.DELETED)) {
-            throw new BusinessRuleException("No puede suspender o eliminar su propia cuenta.");
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new BusinessRuleException("Las cuentas administrativas no pueden modificarse desde este panel.");
         }
 
-        if (!isAllowedTransition(target.getAccountStatus(), newStatus)) {
+        return user;
+    }
+
+    private AdminUserDetailResponse toDetail(User user) {
+        return AdminUserDetailResponse.from(user, allowedTransitions(user.getAccountStatus()));
+    }
+
+    private List<AdminAccountStatus> allowedTransitions(AccountStatus currentStatus) {
+        return switch (currentStatus) {
+            case PENDING_VALIDATION -> List.of(
+                    AdminAccountStatus.ACTIVE,
+                    AdminAccountStatus.SUSPENDED,
+                    AdminAccountStatus.DELETED);
+            case ACTIVE -> List.of(AdminAccountStatus.SUSPENDED, AdminAccountStatus.DELETED);
+            case SUSPENDED -> List.of(AdminAccountStatus.ACTIVE, AdminAccountStatus.DELETED);
+            case DELETED -> List.of(AdminAccountStatus.ACTIVE);
+        };
+    }
+
+    private void validateStatusTransition(AccountStatus currentStatus, AccountStatus newStatus) {
+        if (currentStatus == newStatus) {
+            throw new BusinessRuleException("El estado seleccionado ya es el estado actual.");
+        }
+
+        boolean allowed = allowedTransitions(currentStatus).stream()
+                .map(AdminAccountStatus::toAccountStatus)
+                .anyMatch(status -> status == newStatus);
+        if (!allowed) {
             throw new BusinessRuleException("La transicion de estado no es valida.");
         }
     }
 
-    // Define las transiciones de estado permitidas según el estado actual
-    private boolean isAllowedTransition(AccountStatus currentStatus, AccountStatus newStatus) {
-        return switch (currentStatus) {
-            case ACTIVE -> newStatus == AccountStatus.ACTIVE
-                    || newStatus == AccountStatus.SUSPENDED
-                    || newStatus == AccountStatus.DELETED;
-            case PENDING_VALIDATION -> newStatus == AccountStatus.PENDING_VALIDATION
-                    || newStatus == AccountStatus.ACTIVE
-                    || newStatus == AccountStatus.SUSPENDED
-                    || newStatus == AccountStatus.DELETED;
-            case SUSPENDED -> newStatus == AccountStatus.SUSPENDED
-                    || newStatus == AccountStatus.ACTIVE
-                    || newStatus == AccountStatus.DELETED;
-            case DELETED -> newStatus == AccountStatus.DELETED
-                    || newStatus == AccountStatus.ACTIVE;
-        };
+    private String validateReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BusinessRuleException("Debe indicar el motivo del cambio de estado.");
+        }
+
+        String normalized = reason.trim();
+        if (normalized.length() > 500) {
+            throw new BusinessRuleException("El motivo no debe superar los 500 caracteres.");
+        }
+
+        return normalized;
     }
 
-    // Cuenta usuarios por rol
-    private long countByRole(List<User> users, UserRole role) {
-        return users.stream().filter(user -> user.getRole() == role).count();
-    }
-
-    // Cuenta usuarios por estado de cuenta
-    private long countByStatus(List<User> users, AccountStatus status) {
-        return users.stream().filter(user -> user.getAccountStatus() == status).count();
+    private String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim().toLowerCase(Locale.ROOT);
     }
 }

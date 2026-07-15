@@ -70,6 +70,14 @@ Historias principales:
 
 Permite comunicación en tiempo real entre cliente y trabajador, mensajes predeterminados, indicador de no leídos, historial y estado de conexión.
 
+Estado actual de implementación inicial:
+
+- conversación única reutilizable por pareja cliente-trabajador
+- API REST para listar conversaciones, cargar historial paginado, enviar mensajes, marcar lecturas y actualizar presencia
+- WebSocket `/ws/chat` para eventos de mensajes, lectura y actualización de conversaciones
+- pantalla protegida `/chat` para `CLIENT` y `WORKER`
+- integración con `M04` pendiente mediante una política de acceso desacoplada; no se modifican entidades ni endpoints de contratación
+
 Historias principales:
 
 - US01-M05-RF01: Mensajería en tiempo real.
@@ -81,6 +89,16 @@ Historias principales:
 ## M06 - Historial y Estadísticas
 
 Permite consultar historial de servicios y visualizar estadísticas de actividad para clientes y trabajadores.
+
+Estado actual de implementación:
+
+- read model persistente `ServiceHistoryRecord`, sin endpoint público de escritura
+- historial propio en `GET /api/history/services`, con estado, rango inclusivo, paginación y orden descendente
+- estadísticas del trabajador en `GET /api/statistics/workers/me`
+- estadísticas del cliente en `GET /api/statistics/clients/me`
+- ventanas móviles de 7, 30 y 365 días, incluyendo el día actual
+- rutas frontend protegidas `/history` y `/statistics`, con resolución del dashboard según el rol autenticado
+- integración de altas pendiente de los contratos definitivos de `M04`, `M07` y `M09`; hasta entonces producción presenta estados vacíos reales
 
 Historias principales:
 
@@ -143,13 +161,14 @@ Historias principales:
 
 ## Soporte administrativo actual
 
-Aunque todavía no existe un módulo funcional completo de reclamos o moderación, el backend ya incorpora una base administrativa mínima:
+Aunque todavía no existe un módulo funcional completo de reclamos o moderación, el backend ya incorpora una base administrativa operativa:
 
-- listado de usuarios
-- detalle de usuario
-- cambio de estado de cuenta
-- métricas básicas agregadas
+- listado paginado con búsqueda, filtros y ordenamiento del lado del servidor
+- detalle de clientes y trabajadores con transiciones válidas
+- cambio de estado con motivo obligatorio e historial de auditoría
+- métricas agregadas por rol y estado
+- protección para impedir la gestión de otras cuentas administrativas
 
-En frontend, este soporte hoy se consume desde `/admin/home` y `/admin/users/:userId`.
+En frontend, este soporte se consume desde `/admin/home`, `/admin/users` y `/admin/users/:userId`.
 
 Este soporte se expone bajo `/api/admin/**` y requiere rol `ADMIN`.
